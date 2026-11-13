@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Historial y Auditoría - FU.HE.SA</title>
+  <title>Panel de Auditoría y Donantes - FU.HE.SA</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -13,7 +13,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1100px;
       margin: auto;
       background: white;
       padding: 25px;
@@ -30,16 +30,17 @@
     .subtitulo {
       text-align: center;
       color: #4a5568;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       font-size: 1.05rem;
     }
 
-    /* Barra superior con calendario y buscador */
+    /* Barra superior con filtros y exportación */
     .filtros-grid {
       display: grid;
-      grid-template-columns: 1fr 1.5fr;
+      grid-template-columns: 1fr 1.5fr auto;
       gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      align-items: end;
     }
     @media (max-width: 768px) {
       .filtros-grid { grid-template-columns: 1fr; }
@@ -69,10 +70,31 @@
     }
     .filtro-box input[type="date"] { cursor: pointer; }
 
-    /* Tarjetas de estadísticas detalladas */
+    /* Botón de exportación */
+    .btn-exportar {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+      height: 57px;
+    }
+    .btn-exportar:hover {
+      background: #047857;
+    }
+
+    /* Tarjetas de estadísticas avanzadas */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 15px;
       margin-bottom: 25px;
     }
@@ -91,13 +113,13 @@
       letter-spacing: 0.5px;
     }
     .stat-valor {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       font-weight: 900;
       color: #1e3a8a;
       margin-top: 5px;
     }
 
-    /* Tabla estilizada de historial */
+    /* Tabla de registros */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -121,7 +143,7 @@
       background: #f1f5f9;
     }
     
-    /* Badges de sectores y tipos */
+    /* Badges */
     .badge-sector {
       padding: 6px 12px;
       border-radius: 20px;
@@ -129,7 +151,6 @@
       font-weight: bold;
       display: inline-block;
     }
-    .sector-Recepción { background: #e0f2fe; color: #0369a1; }
     .sector-Entrevista { background: #fef3c7; color: #b45309; }
     .sector-Extracción { background: #fee2e2; color: #990000; }
 
@@ -155,10 +176,10 @@
 <body>
 
   <div class="container">
-    <h2>Historial y Auditoría de Turnos</h2>
-    <div class="subtitulo">Registro diario, calendario, buscador y métricas</div>
+    <h2>Panel de Control y Donantes - FU.HE.SA</h2>
+    <div class="subtitulo">Registro único, métricas de flujo, tiempos de atención y auditoría diaria</div>
 
-    <!-- Filtros: Calendario y Buscador -->
+    <!-- Filtros -->
     <div class="filtros-grid">
       <div class="filtro-box">
         <label for="input-calendario">📅 Filtrar por Día:</label>
@@ -168,40 +189,44 @@
         <label for="input-buscador">🔍 Buscar por Nombre / Donante:</label>
         <input type="text" id="input-buscador" placeholder="Ej: Juan Pérez..." autocomplete="off">
       </div>
+      <button id="btn-exportar" class="btn-exportar" title="Descargar reporte completo en Excel">
+        📊 Exportar Excel
+      </button>
     </div>
 
-    <!-- Tarjetas de Estadísticas -->
+    <!-- Tarjetas de Estadísticas Mejoradas -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-titulo">Registros Encontrados</div>
+        <div class="stat-titulo">Donantes Únicos</div>
         <div class="stat-valor" id="stat-total">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #0284c7;">
+        <div class="stat-titulo">⏱️ Tiempo Promedio</div>
+        <div class="stat-valor" id="stat-tiempo-promedio">0 min</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #8b5cf6;">
+        <div class="stat-titulo">📈 Hora Pico</div>
+        <div class="stat-valor" id="stat-hora-pico">-</div>
       </div>
       <div class="stat-card" style="border-left-color: #f43f5e;">
         <div class="stat-titulo">Plaquetas</div>
         <div class="stat-valor" id="stat-plaquetas">0</div>
       </div>
-      <div class="stat-card" style="border-left-color: #10b981;">
-        <div class="stat-titulo">Con Turno</div>
-        <div class="stat-valor" id="stat-con-turno">0</div>
-      </div>
-      <div class="stat-card" style="border-left-color: #f59e0b;">
-        <div class="stat-titulo">Sin Turno</div>
-        <div class="stat-valor" id="stat-sin-turno">0</div>
-      </div>
     </div>
 
-    <!-- Tabla de Llamados -->
+    <!-- Tabla -->
     <table id="tabla-historial">
       <thead>
         <tr>
-          <th>Fecha y Hora</th>
-          <th>Sector</th>
-          <th>Destino / Tipo</th>
-          <th>Donante / Turno</th>
+          <th>Ingreso / Cierre</th>
+          <th>Último Sector</th>
+          <th>Box / Consultorio & Tipo</th>
+          <th>Donante (Apellido y Nombre)</th>
+          <th>Tiempo en Circuito</th>
         </tr>
       </thead>
       <tbody id="cuerpo-historial">
-        <tr><td colspan="4" class="sin-datos">Cargando historial...</td></tr>
+        <tr><td colspan="5" class="sin-datos">Cargando registros...</td></tr>
       </tbody>
     </table>
   </div>
@@ -224,127 +249,192 @@
 
     const inputCalendario = document.getElementById("input-calendario");
     const inputBuscador = document.getElementById("input-buscador");
+    const btnExportar = document.getElementById("btn-exportar");
     const cuerpoHistorial = document.getElementById("cuerpo-historial");
+    
     const statTotal = document.getElementById("stat-total");
+    const statTiempoPromedio = document.getElementById("stat-tiempo-promedio");
+    const statHoraPico = document.getElementById("stat-hora-pico");
     const statPlaquetas = document.getElementById("stat-plaquetas");
-    const statConTurno = document.getElementById("stat-con-turno");
-    const statSinTurno = document.getElementById("stat-sin-turno");
 
     let datosGlobales = [];
+    let filtradosActuales = [];
 
-    // Inicializar el calendario con la fecha de hoy por defecto
     const hoy = new Date();
-    const anio = hoy.getFullYear();
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoy.getDate()).padStart(2, '0');
-    inputCalendario.value = `${anio}-${mes}-${dia}`;
+    inputCalendario.value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
-    // Escucha en tiempo real la rama 'historial' de Firebase
     onValue(ref(db, 'historial'), (snapshot) => {
       if (snapshot.exists()) {
         const registros = snapshot.val();
         datosGlobales = Object.values(registros);
         renderizarVista();
       } else {
-        cuerpoHistorial.innerHTML = `<tr><td colspan="4" class="sin-datos">No hay llamados registrados en la base de datos.</td></tr>`;
+        cuerpoHistorial.innerHTML = `<tr><td colspan="5" class="sin-datos">No hay registros en la base de datos.</td></tr>`;
         statTotal.textContent = "0";
+        statTiempoPromedio.textContent = "0 min";
+        statHoraPico.textContent = "-";
         statPlaquetas.textContent = "0";
-        statConTurno.textContent = "0";
-        statSinTurno.textContent = "0";
+        filtradosActuales = [];
       }
     });
 
-    // Eventos para actualizar la vista en tiempo real al filtrar o buscar
     inputCalendario.addEventListener("change", renderizarVista);
     inputBuscador.addEventListener("input", renderizarVista);
 
     function renderizarVista() {
-      const fechaElegida = inputCalendario.value; // Formato "YYYY-MM-DD"
+      const fechaElegida = inputCalendario.value;
       const textoBusqueda = inputBuscador.value.trim().toLowerCase();
 
-      // Filtrar los registros
-      const filtrados = datosGlobales.filter(item => {
+      // 1. Filtrar registros válidos (excluyendo recepción y números puros)
+      const filtradosCrudos = datosGlobales.filter(item => {
         if (!item.timestamp) return false;
 
-        // 1. Filtro por buscador de texto (si se escribió algo)
-        if (textoBusqueda) {
-          const identificador = (item.identificador || "").toLowerCase();
-          if (!identificador.includes(textoBusqueda)) {
-            return false;
-          }
-        }
+        const sectorLimpio = (item.sector || "").toLowerCase();
+        if (sectorLimpio.includes("recepción") || sectorLimpio.includes("recepcion")) return false;
 
-        // 2. Filtro por calendario (si hay una fecha seleccionada y el buscador está vacío)
-        // Nota: Si el usuario está usando el buscador de texto, permitimos buscar en todo el historial sin restringir a una sola fecha.
+        const identificador = (item.identificador || "").trim();
+        if (!identificador || /^\d+$/.test(identificador)) return false;
+
+        if (textoBusqueda && !identificador.toLowerCase().includes(textoBusqueda)) return false;
+
         if (!textoBusqueda && fechaElegida) {
           const d = new Date(item.timestamp);
-          const anioD = d.getFullYear();
-          const mesD = String(d.getMonth() + 1).padStart(2, '0');
-          const diaD = String(d.getDate()).padStart(2, '0');
-          if (`${anioD}-${mesD}-${diaD}` !== fechaElegida) {
-            return false;
-          }
+          const fechaD = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (fechaD !== fechaElegida) return false;
         }
 
         return true;
       });
 
-      // Ordenar del más reciente al más antiguo
-      filtrados.sort((a, b) => b.timestamp - a.timestamp);
+      // 2. DEDUPLICACIÓN Y CÁLCULO DE TIEMPOS POR DONANTE
+      const mapaDonantes = new Map();
 
-      // Contadores específicos
+      filtradosCrudos.forEach(item => {
+        const d = new Date(item.timestamp);
+        const fechaDia = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const nombreKey = (item.identificador || "").trim().toLowerCase();
+        const claveUnica = `${fechaDia}_${nombreKey}`;
+
+        if (!mapaDonantes.has(claveUnica)) {
+          mapaDonantes.set(claveUnica, {
+            nombreOriginal: item.identificador,
+            primerTimestamp: item.timestamp,
+            ultimoTimestamp: item.timestamp,
+            ultimoSector: item.sector,
+            consultorio: item.consultorio || '-',
+            tipo: item.tipo || ''
+          });
+        } else {
+          const reg = mapaDonantes.get(claveUnica);
+          if (item.timestamp < reg.primerTimestamp) reg.primerTimestamp = item.timestamp;
+          if (item.timestamp > reg.ultimoTimestamp) {
+            reg.ultimoTimestamp = item.timestamp;
+            reg.ultimoSector = item.sector;
+            reg.consultorio = item.consultorio || reg.consultorio;
+            reg.tipo = item.tipo || reg.tipo;
+          }
+        }
+      });
+
+      filtradosActuales = Array.from(mapaDonantes.values());
+      filtradosActuales.sort((a, b) => b.ultimoTimestamp - a.ultimoTimestamp);
+
+      // 3. ESTADÍSTICAS AVANZADAS
       let countPlaquetas = 0;
-      let countConTurno = 0;
-      let countSinTurno = 0;
+      let sumaMinutos = 0;
+      let totalConTiempo = 0;
+      const horasConteo = {};
 
       let filasHTML = "";
 
-      filtrados.forEach(item => {
-        const fechaHoraObj = new Date(item.timestamp);
-        const fechaStr = fechaHoraObj.toLocaleDateString('es-AR');
-        const horaStr = fechaHoraObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      filtradosActuales.forEach(donante => {
+        const dUltimo = new Date(donante.ultimoTimestamp);
+        const horaStr = dUltimo.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         
-        const sectorLimpio = item.sector || "General";
-        const tipoAtencion = item.tipo || "";
+        // Hora pico (agrupada por hora exacta)
+        const horaExacta = `${String(dUltimo.getHours()).padStart(2, '0')}:00 hs`;
+        horasConteo[horaExacta] = (horasConteo[horaExacta] || 0) + 1;
 
-        const tipoLower = tipoAtencion.toLowerCase();
-        if (tipoLower.includes('plaqueta')) {
-          countPlaquetas++;
+        // Tipo de donación
+        const tipoLower = donante.tipo.toLowerCase();
+        if (tipoLower.includes('plaqueta')) countPlaquetas++;
+
+        // Tiempo en circuito (diferencia entre primer y último llamado en minutos)
+        const diffMs = donante.ultimoTimestamp - donante.primerTimestamp;
+        const diffMin = Math.round(diffMs / 60000);
+        if (diffMin > 0) {
+          sumaMinutos += diffMin;
+          totalConTiempo++;
         }
-        if (tipoLower.includes('sin turno')) {
-          countSinTurno++;
-        } else if (tipoLower.includes('con turno') || tipoLower.includes('sangre total')) {
-          countConTurno++;
-        }
+        const tiempoTexto = diffMin > 0 ? `${diffMin} min` : `En proceso`;
 
-        const destinoTexto = item.consultorio || '-';
-        const badgeTipo = tipoAtencion ? `<span class="badge-tipo">${tipoAtencion}</span>` : '';
-
-        // Mostrar fecha completa si está buscando en modo global con el buscador de texto
-        const columnaFecha = textoBusqueda ? `${fechaStr} - ${horaStr} hs` : `${horaStr} hs`;
+        const badgeSector = donante.ultimoSector || "General";
+        const badgeTipo = donante.tipo ? `<span class="badge-tipo">${donante.tipo}</span>` : '';
 
         filasHTML += `
           <tr>
-            <td><strong>${columnaFecha}</strong></td>
-            <td><span class="badge-sector sector-${sectorLimpio}">${sectorLimpio}</span></td>
-            <td>${destinoTexto} ${badgeTipo}</td>
-            <td><strong>${item.identificador}</strong></td>
+            <td><strong>${horaStr}</strong></td>
+            <td><span class="badge-sector sector-${badgeSector}">${badgeSector}</span></td>
+            <td>${donante.consultorio} ${badgeTipo}</td>
+            <td><strong>${donante.nombreOriginal}</strong></td>
+            <td><code>${tiempoTexto}</code></td>
           </tr>
         `;
       });
 
-      if (filtrados.length === 0) {
-        cuerpoHistorial.innerHTML = `<tr><td colspan="4" class="sin-datos">No se encontraron registros que coincidan con la búsqueda.</td></tr>`;
+      if (filtradosActuales.length === 0) {
+        cuerpoHistorial.innerHTML = `<tr><td colspan="5" class="sin-datos">No se encontraron donantes registrados.</td></tr>`;
+        statTiempoPromedio.textContent = "0 min";
+        statHoraPico.textContent = "-";
       } else {
         cuerpoHistorial.innerHTML = filasHTML;
+        
+        // Promedio de tiempo
+        const promedio = totalConTiempo > 0 ? Math.round(sumaMinutos / totalConTiempo) : 0;
+        statTiempoPromedio.textContent = `${promedio} min`;
+
+        // Calcular hora pico
+        let horaPicoMax = "-";
+        let maxVisitas = 0;
+        for (const [hora, count] of Object.entries(horasConteo)) {
+          if (count > maxVisitas) {
+            maxVisitas = count;
+            horaPicoMax = hora;
+          }
+        }
+        statHoraPico.textContent = horaPicoMax !== "-" ? `${horaPicoMax} (${maxVisitas})` : "-";
       }
 
-      // Actualizar tarjetas de estadísticas
-      statTotal.textContent = filtrados.length;
+      statTotal.textContent = filtradosActuales.length;
       statPlaquetas.textContent = countPlaquetas;
-      statConTurno.textContent = countConTurno;
-      statSinTurno.textContent = countSinTurno;
     }
+
+    // Exportar a Excel (CSV)
+    btnExportar.addEventListener("click", () => {
+      if (filtradosActuales.length === 0) {
+        alert("No hay registros para exportar.");
+        return;
+      }
+
+      let csvContent = "\uFEFFHora Registro;Último Sector;Box/Consultorio;Tipo;Donante;Tiempo en Circuito (min)\n";
+
+      filtradosActuales.forEach(d => {
+        const fechaHoraObj = new Date(d.ultimoTimestamp);
+        const horaStr = fechaHoraObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        const diffMin = Math.round((d.ultimoTimestamp - d.primerTimestamp) / 60000);
+
+        csvContent += `"${horaStr}";"${d.ultimoSector}";"${d.consultorio}";"${d.tipo}";"${d.nombreOriginal}";"${diffMin > 0 ? diffMin : 0}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `reporte_clinico_fuhesa_${inputCalendario.value}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   </script>
 </body>
 </html>
