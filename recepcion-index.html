@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Recepción - FU.HE.SA</title>
+  <style>
+    body { font-family: sans-serif; padding: 22px; max-width: 400px; margin: auto; background: #f8f9fa; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 15px; }
+    h2 { text-align: center; color: #1e3a8a; margin-bottom: 8px; margin-top: 0; }
+    
+    .ultimo-box {
+      background: #e9ecef;
+      border-left: 5px solid #1e3a8a;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .ultimo-titulo { font-size: 0.75rem; text-transform: uppercase; color: #555; font-weight: bold; letter-spacing: 0.5px; }
+    .ultimo-valor { font-size: 1.35rem; font-weight: bold; color: #111; margin: 2px 0; }
+    .ultimo-detalle { font-size: 0.85rem; color: #444; }
+
+    label { font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem; color: #333; }
+    select, input { width: 100%; padding: 9px; font-size: 1rem; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; background: white; }
+    
+    button { width: 100%; padding: 11px; border: none; font-size: 1.05rem; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+    
+    .fila-correlativo { display: flex; gap: 8px; margin-top: 12px; }
+    #btn-siguiente { background: #28a745; color: white; flex: 2.3; font-size: 1.1rem; }
+    #btn-siguiente:hover { background: #218838; }
+    #btn-config-num { background: #6c757d; color: white; flex: 1; font-size: 0.85rem; padding: 6px; }
+    #btn-config-num:hover { background: #5a6268; }
+
+    #btn-llamar { background: #007bff; color: white; margin-top: 10px; font-size: 1rem; }
+    #btn-llamar:hover { background: #0056b3; }
+    
+    #btn-repetir { background: #ffc107; color: #333; margin-top: 8px; font-size: 0.95rem; }
+    #btn-repetir:hover { background: #e0a800; }
+
+    .atajos-info {
+      background: #eef2f6;
+      border-radius: 4px;
+      padding: 7px 10px;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: #495057;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .separador { border: 0; border-top: 1px solid #dee2e6; margin: 14px 0 10px 0; }
+    #btn-limpiar { background: #dc3545; color: white; font-size: 0.88rem; padding: 8px; }
+    #btn-limpiar:hover { background: #b02a37; }
+
+    #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; display: flex; justify-content: center; align-items: center; z-index: 999; }
+    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    .login-box input { margin-top: 10px; margin-bottom: 15px; }
+    .login-box button { background: #28a745; color: white; }
+    .error-msg { color: #dc3545; font-size: 0.9rem; margin-top: 5px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="login-overlay">
+    <div class="login-box">
+      <h2>Acceso Recepción</h2>
+      <p style="font-size: 0.9rem; color: #666;">Ingresá la clave del sector:</p>
+      <input type="password" id="input-password" placeholder="Contraseña">
+      <button id="btn-login">Entrar</button>
+      <div id="error-password" class="error-msg">Contraseña incorrecta</div>
+    </div>
+  </div>
+
+  <div id="panel-contenido" style="display: none;">
+    <h2>Panel - Recepción</h2>
+
+    <div class="ultimo-box">
+      <div class="ultimo-titulo">Último llamado en Recepción</div>
+      <div class="ultimo-valor" id="ultimo-donante">-</div>
+      <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
+    </div>
+    
+    <label>Box de Recepción:</label>
+    <select id="cons">
+      <option value="Box 1">Box 1</option>
+      <option value="Box 2">Box 2</option>
+    </select>
+
+    <div class="fila-correlativo">
+      <button id="btn-siguiente">➕ Siguiente (<span id="prox-num">00</span>)</button>
+      <button id="btn-config-num" title="Cambiar número inicial">✏️ Cambiar</button>
+    </div>
+
+    <label style="margin-top: 12px;">O Nombre / Número Libre:</label>
+    <input type="text" id="id" placeholder="Ej: 014 o Juan Pérez">
+    
+    <button id="btn-llamar">Llamar Donante (Escrito)</button>
+    <button id="btn-repetir">📢 Repetir Último Llamado</button>
+
+    <div class="atajos-info">
+      ⌨️ <b>Atajos en PC:</b> <b>Enter</b> o <b>Espacio</b> = Siguiente | <b>Alt + R</b> = Repetir
+    </div>
+
+    <hr class="separador">
+    <button id="btn-limpiar">🗑️ Limpiar Pantalla (Inicio de Jornada)</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const CLAVE_SECRETA = "fuhesa2026"; 
+    const WEBHOOK_URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec";
+    const SECTOR_ACTUAL = "Recepcion";
+    let numeroUltimoGlobal = 0;
+
+    function formatearNumero(num) {
+      // Rellena con ceros a la izquierda para que quede siempre de 2 dígitos (ej: 00, 05, 42, 99)
+      return String(num % 100).padStart(2, '0');
+    }
+
+    document.getElementById("btn-login").addEventListener("click", verificarClave);
+    document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
+
+    function verificarClave() {
+      if (document.getElementById("input-password").value === CLAVE_SECRETA) {
+        document.getElementById("login-overlay").style.display = "none";
+        document.getElementById("panel-contenido").style.display = "block";
+      } else {
+        document.getElementById("error-password").style.display = "block";
+        document.getElementById("input-password").value = "";
+      }
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
+      authDomain: "llamador-daae1.firebaseapp.com",
+      databaseURL: "https://llamador-daae1-default-rtdb.firebaseio.com",
+      projectId: "llamador-daae1",
+      storageBucket: "llamador-daae1.appspot.com",
+      appId: "1:710945508720:web:5a69bc4c08e9e97d5353b5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
+      const elDonante = document.getElementById("ultimo-donante");
+      const elInfo = document.getElementById("ultimo-info");
+      const elProx = document.getElementById("prox-num");
+
+      if (snapshot.exists()) {
+        const datos = snapshot.val();
+        const hora = datos.timestamp 
+          ? new Date(datos.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
+          : '';
+        elDonante.textContent = datos.identificador;
+        elInfo.textContent = `${datos.consultorio}${hora ? ' • ' + hora + ' hs' : ''}`;
+
+        if (!isNaN(datos.identificador)) {
+          numeroUltimoGlobal = parseInt(datos.identificador);
+          elProx.textContent = formatearNumero(numeroUltimoGlobal + 1);
+        }
+      } else {
+        elDonante.textContent = "-";
+        elInfo.textContent = "Sin llamados activos";
+        numeroUltimoGlobal = 0;
+        elProx.textContent = formatearNumero(1);
+      }
+    });
+
+    document.getElementById("btn-config-num").addEventListener("click", () => {
+      const nuevoVal = prompt("Ingresá el número desde el cual querés continuar (ej: 0 o 15):", numeroUltimoGlobal);
+      if (nuevoVal !== null && !isNaN(nuevoVal)) {
+        numeroUltimoGlobal = parseInt(nuevoVal) - 1;
+        document.getElementById("prox-num").textContent = formatearNumero(numeroUltimoGlobal + 1);
+        alert("✅ Número configurado correctamente.");
+      }
+    });
+
+    function guardarDonanteEnSheets(datos) {
+      if (!WEBHOOK_URL_GOOGLE_SHEETS || WEBHOOK_URL_GOOGLE_SHEETS.includes.includes("TU_URL")) return;
+      fetch(WEBHOOK_URL_GOOGLE_SHEETS, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) }).catch(err => console.error(err));
+    }
+
+    function ejecutarLlamado(identificadorTexto) {
+      const c = document.getElementById("cons").value;
+      const i = identificadorTexto.trim();
+      if (!i) return;
+
+      const ahora = new Date();
+      const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const datosLlamado = { identificador: i, sector: SECTOR_ACTUAL, consultorio: c, timestamp: Date.now() };
+
+      set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
+        document.getElementById("id").value = "";
+      });
+
+      push(ref(db, 'historial'), datosLlamado);
+      guardarDonanteEnSheets({ fechaHora: fechaHoraStr, identificador: i, sector: SECTOR_ACTUAL, consultorio: c, observacion: "" });
+    }
+
+    function llamarSiguiente() {
+      numeroUltimoGlobal++;
+      if (numeroUltimoGlobal > 99) {
+        numeroUltimoGlobal = 0; // Vuelve a 0 al pasar de 99
+      }
+      ejecutarLlamado(formatearNumero(numeroUltimoGlobal));
+    }
+
+    function repetirLlamado() {
+      get(ref(db, `sectores/${SECTOR_ACTUAL}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const datos = snapshot.val();
+          datos.timestamp = Date.now();
+          set(ref(db, `sectores/${SECTOR_ACTUAL}`), datos);
+          push(ref(db, 'historial'), datos);
+          alert(`Se repitió el llamado para ${datos.identificador}`);
+        } else {
+          alert("No hay turnos activos en Recepción para repetir.");
+        }
+      });
+    }
+
+    document.getElementById("btn-siguiente").addEventListener("click", llamarSiguiente);
+    
+    document.getElementById("btn-llamar").addEventListener("click", () => {
+      const i = document.getElementById("id").value;
+      if (!i.trim()) return alert("Por favor escribe el nombre o número del donante.");
+      if (!isNaN(i.trim())) {
+        numeroUltimoGlobal = parseInt(i.trim());
+      }
+      ejecutarLlamado(i);
+    });
+
+    document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
+
+    // Atajos de teclado en Recepción
+    document.addEventListener("keydown", (e) => {
+      if (document.getElementById("panel-contenido").style.display === "none") return;
+
+      const inputLibre = document.getElementById("id");
+
+      if ((e.key === "Enter" || e.code === "Space") && document.activeElement !== inputLibre && document.activeElement.tagName !== "SELECT") {
+        e.preventDefault();
+        llamarSiguiente();
+      }
+
+      if (e.altKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        repetirLlamado();
+      }
+    });
+
+    document.getElementById("btn-limpiar").addEventListener("click", () => {
+      const confirmar = confirm("¿Estás seguro de que querés limpiar toda la pantalla de la tele e iniciar el día en cero?");
+      if (confirmar) {
+        Promise.all([
+          remove(ref(db, 'sectores')),
+          remove(ref(db, 'historial'))
+        ]).then(() => {
+          numeroUltimoGlobal = 0;
+          document.getElementById("prox-num").textContent = formatearNumero(1);
+          alert("✅ Pantalla limpiada.");
+        }).catch((err) => {
+          console.error("Error al limpiar:", err);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

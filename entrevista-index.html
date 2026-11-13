@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Entrevista - FU.HE.SA</title>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      padding: 15px; 
+      max-width: 480px; 
+      margin: auto; 
+      background: #edf2f7; 
+      color: #1a202c;
+    }
+    .container {
+      background: white;
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      margin-top: 10px;
+    }
+    h2 { text-align: center; color: #1e3a8a; margin-bottom: 15px; margin-top: 0; font-size: 1.7rem; font-weight: 800; }
+    
+    /* Caja de último llamado súper visible y táctil */
+    .ultimo-box {
+      background: #e2e8f0;
+      border-left: 6px solid #1e3a8a;
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 22px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .ultimo-box:active { transform: scale(0.98); background: #cbd5e1; }
+    .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #4a5568; font-weight: 800; letter-spacing: 0.5px; }
+    .ultimo-valor { font-size: 1.8rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
+    .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
+    .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
+
+    /* Estilos grandes para gente grande */
+    label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
+    
+    .campo-grupo { margin-bottom: 18px; }
+
+    select, input { 
+      width: 100%; 
+      padding: 14px; 
+      font-size: 1.2rem; 
+      box-sizing: border-box; 
+      border: 2px solid #cbd5e1; 
+      border-radius: 10px; 
+      background: #fff;
+      color: #1a202c;
+      font-weight: 600;
+    }
+    select:focus, input:focus {
+      border-color: #007bff;
+      outline: none;
+      background: #fffdf0;
+    }
+    
+    /* Botones principales grandes */
+    .btn-principal { 
+      width: 100%; 
+      padding: 18px; 
+      border: none; 
+      font-size: 1.3rem; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      font-weight: 900; 
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 5px;
+    }
+    .btn-principal:active { transform: scale(0.98); }
+
+    #btn-llamar { 
+      background: #007bff; 
+      color: white; 
+      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+    #btn-llamar:hover { background: #0056b3; }
+
+    #btn-repetir { 
+      background: #ffc107; 
+      color: #212529; 
+      box-shadow: 0 4px 12px rgba(255,193,7,0.3);
+      margin-top: 12px;
+    }
+    #btn-repetir:hover { background: #e0a800; }
+
+    /* Mensaje de error integrado sin alertas molestas */
+    #error-aviso {
+      color: #c53030;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    /* Overlay de acceso */
+    #login-overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: #edf2f7; display: flex; justify-content: center; align-items: center; z-index: 999; 
+      padding: 20px; box-sizing: border-box;
+    }
+    .login-box { 
+      background: white; padding: 35px; border-radius: 16px; 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; 
+    }
+    .login-box input { margin-top: 15px; margin-bottom: 20px; text-align: center; }
+    .login-box button { background: #28a745; color: white; width: 100%; padding: 14px; font-size: 1.2rem; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+    .error-msg { color: #dc3545; font-size: 1rem; margin-top: 10px; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="login-overlay">
+    <div class="login-box">
+      <h2>Acceso Entrevista</h2>
+      <p style="font-size: 1rem; color: #4a5568;">Ingresá la clave del sector:</p>
+      <input type="password" id="input-password" placeholder="Contraseña">
+      <button id="btn-login">Entrar</button>
+      <div id="error-password" class="error-msg">Contraseña incorrecta</div>
+    </div>
+  </div>
+
+  <div id="panel-contenido" style="display: none;">
+    <div class="container">
+      <h2>Panel - Entrevista</h2>
+
+      <!-- Caja táctil para repetir el último llamado con un toque -->
+      <div class="ultimo-box" id="box-repetir-tactil" title="Tocá aquí para repetir">
+        <div class="ultimo-titulo">Último llamado en Entrevista</div>
+        <div class="ultimo-valor" id="ultimo-donante">-</div>
+        <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
+        <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
+      </div>
+      
+      <!-- Consultorio (4 opciones) -->
+      <div class="campo-grupo">
+        <label>Consultorio:</label>
+        <select id="cons">
+          <option value="Consultorio 1">Consultorio 1</option>
+          <option value="Consultorio 2">Consultorio 2</option>
+          <option value="Consultorio 3">Consultorio 3</option>
+          <option value="Consultorio 4">Consultorio 4</option>
+        </select>
+      </div>
+
+      <!-- Tipo de Atención (Sin Turno por defecto) -->
+      <div class="campo-grupo">
+        <label>Tipo de Atención:</label>
+        <select id="tipo-atencion">
+          <option value="Sin Turno" selected>Sin Turno</option>
+          <option value="Club de Donantes">Club de Donantes (Prioridad)</option>
+          <option value="Plaquetas">Plaquetas</option>
+          <option value="Turno">Turno</option>
+        </select>
+      </div>
+
+      <!-- Nombre y Apellido (Obligatorio) -->
+      <div class="campo-grupo">
+        <label>Nombre y Apellido del Donante:</label>
+        <input type="text" id="id" placeholder="Ej: Juan Pérez" autocomplete="off">
+      </div>
+
+      <!-- Aviso visual de error si falta el nombre -->
+      <div id="error-aviso">⚠️ Por favor, escribí el nombre y apellido del donante.</div>
+      
+      <!-- Botones principales -->
+      <button id="btn-llamar" class="btn-principal">📢 LLAMAR DONANTE</button>
+      <button id="btn-repetir" class="btn-principal">🔄 REPETIR ÚLTIMO LLAMADO</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const CLAVE_SECRETA = "fuhesa2026"; 
+    const WEBHOOK_URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec";
+    const SECTOR_ACTUAL = "Entrevista";
+
+    const selectConsultorio = document.getElementById("cons");
+    const inputNombre = document.getElementById("id");
+    const errorAviso = document.getElementById("error-aviso");
+
+    // Memoria del último consultorio seleccionado en el celular
+    const consultorioGuardado = localStorage.getItem("fuhesa_entrevista_cons");
+    if (consultorioGuardado) {
+      selectConsultorio.value = consultorioGuardado;
+    }
+    selectConsultorio.addEventListener("change", () => {
+      localStorage.setItem("fuhesa_entrevista_cons", selectConsultorio.value);
+    });
+
+    document.getElementById("btn-login").addEventListener("click", verificarClave);
+    document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
+
+    function verificarClave() {
+      if (document.getElementById("input-password").value === CLAVE_SECRETA) {
+        document.getElementById("login-overlay").style.display = "none";
+        document.getElementById("panel-contenido").style.display = "block";
+        inputNombre.focus();
+      } else {
+        document.getElementById("error-password").style.display = "block";
+        document.getElementById("input-password").value = "";
+      }
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
+      authDomain: "llamador-daae1.firebaseapp.com",
+      databaseURL: "https://llamador-daae1-default-rtdb.firebaseio.com",
+      projectId: "llamador-daae1",
+      storageBucket: "llamador-daae1.appspot.com",
+      appId: "1:710945508720:web:5a69bc4c08e9e97d5353b5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
+      const elDonante = document.getElementById("ultimo-donante");
+      const elInfo = document.getElementById("ultimo-info");
+
+      if (snapshot.exists()) {
+        const datos = snapshot.val();
+        const hora = datos.timestamp 
+          ? new Date(datos.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
+          : '';
+        const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : '';
+        elDonante.textContent = datos.identificador;
+        elInfo.textContent = `${datos.consultorio}${etiquetaTipo}${hora ? ' • ' + hora + ' hs' : ''}`;
+      } else {
+        elDonante.textContent = "-";
+        elInfo.textContent = "Sin llamados activos";
+      }
+    });
+
+    function guardarDonanteEnSheets(datos) {
+      if (!WEBHOOK_URL_GOOGLE_SHEETS || WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
+      fetch(WEBHOOK_URL_GOOGLE_SHEETS, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) }).catch(err => console.error(err));
+    }
+
+    function ejecutarLlamado() {
+      const c = selectConsultorio.value;
+      const tipo = document.getElementById("tipo-atencion").value;
+      const i = inputNombre.value.trim();
+      
+      if (!i) {
+        errorAviso.style.display = "block";
+        inputNombre.focus();
+        return;
+      }
+      errorAviso.style.display = "none";
+
+      const ahora = new Date();
+      const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const datosLlamado = { 
+        identificador: i, 
+        sector: SECTOR_ACTUAL, 
+        consultorio: c, 
+        tipo: tipo,
+        timestamp: Date.now() 
+      };
+
+      set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
+        inputNombre.value = "";
+        document.getElementById("tipo-atencion").value = "Sin Turno"; // Vuelve a Sin Turno por defecto
+        inputNombre.focus();
+      });
+
+      push(ref(db, 'historial'), datosLlamado);
+      guardarDonanteEnSheets({ 
+        fechaHora: fechaHoraStr, 
+        identificador: i, 
+        sector: SECTOR_ACTUAL, 
+        consultorio: `${c} (${tipo})`, 
+        observacion: "" 
+      });
+    }
+
+    function repetirLlamado() {
+      get(ref(db, `sectores/${SECTOR_ACTUAL}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          const datos = snapshot.val();
+          datos.timestamp = Date.now();
+          set(ref(db, `sectores/${SECTOR_ACTUAL}`), datos);
+          push(ref(db, 'historial'), datos);
+          // Feedback visual sutil sin alertas invasivas
+          const box = document.getElementById("box-repetir-tactil");
+          box.style.background = "#d4edda";
+          setTimeout(() => { box.style.background = "#e2e8f0"; }, 400);
+        } else {
+          alert("No hay turnos activos en Entrevista para repetir.");
+        }
+      });
+    }
+
+    document.getElementById("btn-llamar").addEventListener("click", ejecutarLlamado);
+    document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
+    document.getElementById("box-repetir-tactil").addEventListener("click", repetirLlamado);
+
+    inputNombre.addEventListener("keypress", (e) => {
+      if (e.key === 'Enter') {
+        ejecutarLlamado();
+      }
+    });
+
+    // Ocultar aviso de error al empezar a tipear
+    inputNombre.addEventListener("input", () => {
+      if (errorAviso.style.display === "block") {
+        errorAviso.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>

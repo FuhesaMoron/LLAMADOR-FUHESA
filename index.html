@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sala de Espera - FU.HE.SA</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #btn-fullscreen {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      background: rgba(30, 41, 59, 0.8);
+      color: #94a3b8;
+      border: 2px solid #334155;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 1000;
+    }
+    #btn-fullscreen:hover {
+      background: #334155;
+      color: white;
+      border-color: #38bdf8;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 3px solid #334155;
+      padding-bottom: 12px;
+    }
+    h1 { margin: 0; font-size: 2.2rem; color: #f8fafc; letter-spacing: 1px; }
+    .subtitulo { color: #94a3b8; font-size: 1.1rem; margin-top: 4px; }
+
+    #reloj-digital {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #38bdf8;
+      background: #1e293b;
+      padding: 8px 20px;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      letter-spacing: 1px;
+      margin-right: 140px;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr;
+      gap: 20px;
+      flex: 1;
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    .grid-sectores {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      height: 100%;
+    }
+
+    .tarjeta-sector {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px 15px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 3px solid #334155;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .tarjeta-sector.activo {
+      border-color: #38bdf8;
+      transform: scale(1.02);
+    }
+
+    .tarjeta-sector.prioridad-club {
+      border-color: #fbbf24;
+      background: #1e293b;
+      box-shadow: 0 0 25px rgba(251, 191, 36, 0.4);
+      transform: scale(1.02);
+    }
+    .tarjeta-sector.prioridad-club .etiqueta-tipo {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid #fbbf24;
+    }
+
+    .tarjeta-sector.prioridad-plaquetas {
+      border-color: #f43f5e;
+      background: #1e293b;
+      box-shadow: 0 0 25px rgba(244, 63, 94, 0.4);
+      transform: scale(1.02);
+    }
+    .tarjeta-sector.prioridad-plaquetas .etiqueta-tipo {
+      color: #f43f5e;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid #f43f5e;
+    }
+
+    .nombre-sector {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #93c5fd;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .turno-actual {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: #ffffff;
+      margin: 10px 0;
+      word-break: break-word;
+      line-height: 1.1;
+    }
+
+    .info-destino {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+      border: 1px solid #334155;
+    }
+
+    .etiqueta-tipo {
+      display: inline-block;
+      font-size: 0.9rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-top: 6px;
+      font-weight: 700;
+    }
+
+    .panel-historial-lateral {
+      background: #1e293b;
+      border-radius: 16px;
+      border: 3px solid #334155;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .titulo-historial-lateral {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #f8fafc;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid #334155;
+      padding-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .lista-recientes {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .item-reciente {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .item-reciente-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      font-weight: bold;
+    }
+    .item-reciente-nombre {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      word-break: break-word;
+    }
+    .item-reciente-destino {
+      font-size: 0.9rem;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    @keyframes parpadeo {
+      0% { opacity: 1; transform: scale(1.02); }
+      50% { opacity: 0.6; transform: scale(1.04); }
+      100% { opacity: 1; transform: scale(1.02); }
+    }
+    .parpadeando {
+      animation: parpadeo 0.6s ease infinite;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="btn-fullscreen">📺 Pantalla Completa</button>
+
+  <header>
+    <div>
+      <h1>FUNDACIÓN HEMATOLÓGICA SARMIENTO</h1>
+      <div class="subtitulo">Sala de Espera - Turnos y Llamados</div>
+    </div>
+    <div id="reloj-digital">00:00:00</div>
+  </header>
+
+  <div class="main-layout">
+    <div class="grid-sectores">
+      <div class="tarjeta-sector" id="card-Recepcion">
+        <div class="nombre-sector">Recepción</div>
+        <div class="turno-actual" id="val-Recepcion">--</div>
+        <div class="info-destino" id="dest-Recepcion">Aguarde su llamado</div>
+      </div>
+
+      <div class="tarjeta-sector" id="card-Entrevista">
+        <div class="nombre-sector">Entrevista</div>
+        <div class="turno-actual" id="val-Entrevista">--</div>
+        <div class="info-destino" id="dest-Entrevista">Aguarde su llamado</div>
+      </div>
+
+      <div class="tarjeta-sector" id="card-Extraccion">
+        <div class="nombre-sector">Extracción</div>
+        <div class="turno-actual" id="val-Extraccion">--</div>
+        <div class="info-destino" id="dest-Extraccion">Aguarde su llamado</div>
+      </div>
+    </div>
+
+    <div class="panel-historial-lateral">
+      <div class="titulo-historial-lateral">📋 Últimos Llamados</div>
+      <div class="lista-recientes" id="contenedor-recientes">
+        <div style="text-align: center; color: #64748b; margin-top: 30px; font-weight: 600;">Cargando historial...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
+      authDomain: "llamador-daae1.firebaseapp.com",
+      databaseURL: "https://llamador-daae1-default-rtdb.firebaseio.com",
+      projectId: "llamador-daae1",
+      storageBucket: "llamador-daae1.appspot.com",
+      appId: "1:710945508720:web:5a69bc4c08e9e97d5353b5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    function actualizarReloj() {
+      const ahora = new Date();
+      document.getElementById("reloj-digital").textContent = ahora.toLocaleTimeString('es-AR');
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+
+    const btnFullscreen = document.getElementById("btn-fullscreen");
+    btnFullscreen.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error("Error al intentar pasar a pantalla completa:", err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    let timeoutBtn;
+    function ocultarBotonInactivo() {
+      clearTimeout(timeoutBtn);
+      btnFullscreen.style.opacity = "1";
+      timeoutBtn = setTimeout(() => {
+        btnFullscreen.style.opacity = "0.2";
+      }, 5000);
+    }
+    document.addEventListener("mousemove", ocultarBotonInactivo);
+
+    let ultimosTimestamps = {};
+
+    onValue(ref(db, 'sectores'), (snapshot) => {
+      if (snapshot.exists()) {
+        const sectores = snapshot.val();
+
+        ["Recepcion", "Entrevista", "Extraccion"].forEach(nombreSector => {
+          const datos = sectores[nombreSector];
+          const valEl = document.getElementById(`val-${nombreSector}`);
+          const destEl = document.getElementById(`dest-${nombreSector}`);
+          const cardEl = document.getElementById(`card-${nombreSector}`);
+
+          if (datos && datos.identificador) {
+            valEl.textContent = datos.identificador;
+            
+            let textoDestino = datos.consultorio || nombreSector;
+            let textoTipo = datos.tipo ? `<span class="etiqueta-tipo">${datos.tipo}</span>` : '';
+            
+            destEl.innerHTML = `${textoDestino}<br>${textoTipo}`;
+
+            cardEl.classList.remove("activo", "prioridad-club", "prioridad-plaquetas", "parpadeando");
+
+            if (datos.tipo === "Club de Donantes") {
+              cardEl.classList.add("prioridad-club");
+            } else if (datos.tipo === "Plaquetas") {
+              cardEl.classList.add("prioridad-plaquetas");
+            } else {
+              cardEl.classList.add("activo");
+            }
+
+            if (datos.timestamp && datos.timestamp !== ultimosTimestamps[nombreSector]) {
+              ultimosTimestamps[nombreSector] = datos.timestamp;
+              
+              cardEl.classList.add("parpadeando");
+              setTimeout(() => {
+                cardEl.classList.remove("parpadeando");
+              }, 5000);
+
+              reproducirTonoSector(nombreSector);
+            }
+          } else {
+            valEl.textContent = "--";
+            destEl.innerHTML = "Aguarde su llamado";
+            cardEl.classList.remove("activo", "prioridad-club", "prioridad-plaquetas", "parpadeando");
+          }
+        });
+      }
+    });
+
+    const contenedorRecientes = document.getElementById("contenedor-recientes");
+    onValue(ref(db, 'historial'), (snapshot) => {
+      if (snapshot.exists()) {
+        const registros = snapshot.val();
+        const lista = Object.values(registros).sort((a, b) => b.timestamp - a.timestamp);
+        
+        const ultimosCinco = lista.slice(0, 5);
+        let htmlRecientes = "";
+
+        ultimosCinco.forEach(item => {
+          const hora = item.timestamp 
+            ? new Date(item.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
+            : '--:--';
+          
+          let sectorMostrar = item.sector || "";
+          if (sectorMostrar === "Recepcion") sectorMostrar = "Recepción";
+          if (sectorMostrar === "Extraccion") sectorMostrar = "Extracción";
+
+          const destino = item.consultorio || "";
+          const tipo = item.tipo ? ` (${item.tipo})` : '';
+
+          htmlRecientes += `
+            <div class="item-reciente">
+              <div class="item-reciente-top">
+                <span>${sectorMostrar}</span>
+                <span>${hora} hs</span>
+              </div>
+              <div class="item-reciente-nombre">${item.identificador}</div>
+              <div class="item-reciente-destino">${destino}${tipo}</div>
+            </div>
+          `;
+        });
+
+        contenedorRecientes.innerHTML = htmlRecientes;
+      } else {
+        contenedorRecientes.innerHTML = `<div style="text-align: center; color: #64748b; margin-top: 30px; font-weight: 600;">Sin llamados recientes</div>`;
+      }
+    });
+
+    function reproducirTonoSector(sector) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+
+        if (sector === "Recepcion") {
+          tocarBeep(ctx, 587.33, now, 0.25); 
+        } else if (sector === "Entrevista") {
+          tocarBeep(ctx, 523.25, now, 0.15);
+          tocarBeep(ctx, 659.25, now + 0.18, 0.2);
+        } else if (sector === "Extraccion") {
+          tocarBeep(ctx, 440.00, now, 0.12);
+          tocarBeep(ctx, 554.37, now + 0.15, 0.12);
+          tocarBeep(ctx, 659.25, now + 0.30, 0.25);
+        }
+      } catch (e) {
+        console.error("Audio no permitido aún por políticas del navegador:", e);
+      }
+    }
+
+    function tocarBeep(ctx, frecuencia, inicio, duracion) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = frecuencia;
+      
+      gain.gain.setValueAtTime(0.25, inicio);
+      gain.gain.exponentialRampToValueAtTime(0.001, inicio + duracion);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(inicio);
+      osc.stop(inicio + duracion);
+    }
+  </script>
+</body>
+</html>
