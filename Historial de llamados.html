@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial y Auditoría - FU.HE.SA</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #edf2f7;
+      color: #1a202c;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    h2 {
+      color: #1e3a8a;
+      text-align: center;
+      margin-top: 0;
+      font-size: 2rem;
+      font-weight: 800;
+    }
+    .subtitulo {
+      text-align: center;
+      color: #4a5568;
+      margin-bottom: 20px;
+      font-size: 1.05rem;
+    }
+
+    /* Barra superior con calendario y buscador */
+    .filtros-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+      .filtros-grid { grid-template-columns: 1fr; }
+    }
+    .filtro-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 15px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .filtro-box label {
+      font-weight: 800;
+      color: #334155;
+      font-size: 0.95rem;
+    }
+    .filtro-box input {
+      padding: 10px 14px;
+      font-size: 1.05rem;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
+      background: white;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+    .filtro-box input[type="date"] { cursor: pointer; }
+
+    /* Tarjetas de estadísticas detalladas */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: #f1f5f9;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      border-left: 5px solid #1e3a8a;
+    }
+    .stat-titulo {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .stat-valor {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #1e3a8a;
+      margin-top: 5px;
+    }
+
+    /* Tabla estilizada de historial */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      text-align: left;
+    }
+    th, td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 1rem;
+    }
+    th {
+      background: #f8fafc;
+      color: #334155;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+    tr:hover {
+      background: #f1f5f9;
+    }
+    
+    /* Badges de sectores y tipos */
+    .badge-sector {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .sector-Recepción { background: #e0f2fe; color: #0369a1; }
+    .sector-Entrevista { background: #fef3c7; color: #b45309; }
+    .sector-Extracción { background: #fee2e2; color: #990000; }
+
+    .badge-tipo {
+      font-size: 0.85rem;
+      color: #475569;
+      background: #e2e8f0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+
+    .sin-datos {
+      text-align: center;
+      padding: 40px;
+      color: #64748b;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Historial y Auditoría de Turnos</h2>
+    <div class="subtitulo">Registro diario, calendario, buscador y métricas</div>
+
+    <!-- Filtros: Calendario y Buscador -->
+    <div class="filtros-grid">
+      <div class="filtro-box">
+        <label for="input-calendario">📅 Filtrar por Día:</label>
+        <input type="date" id="input-calendario">
+      </div>
+      <div class="filtro-box">
+        <label for="input-buscador">🔍 Buscar por Nombre / Donante:</label>
+        <input type="text" id="input-buscador" placeholder="Ej: Juan Pérez..." autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Tarjetas de Estadísticas -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-titulo">Registros Encontrados</div>
+        <div class="stat-valor" id="stat-total">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #f43f5e;">
+        <div class="stat-titulo">Plaquetas</div>
+        <div class="stat-valor" id="stat-plaquetas">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #10b981;">
+        <div class="stat-titulo">Con Turno</div>
+        <div class="stat-valor" id="stat-con-turno">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-titulo">Sin Turno</div>
+        <div class="stat-valor" id="stat-sin-turno">0</div>
+      </div>
+    </div>
+
+    <!-- Tabla de Llamados -->
+    <table id="tabla-historial">
+      <thead>
+        <tr>
+          <th>Fecha y Hora</th>
+          <th>Sector</th>
+          <th>Destino / Tipo</th>
+          <th>Donante / Turno</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo-historial">
+        <tr><td colspan="4" class="sin-datos">Cargando historial...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
+      authDomain: "llamador-daae1.firebaseapp.com",
+      databaseURL: "https://llamador-daae1-default-rtdb.firebaseio.com",
+      projectId: "llamador-daae1",
+      storageBucket: "llamador-daae1.appspot.com",
+      appId: "1:710945508720:web:5a69bc4c08e9e97d5353b5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const inputCalendario = document.getElementById("input-calendario");
+    const inputBuscador = document.getElementById("input-buscador");
+    const cuerpoHistorial = document.getElementById("cuerpo-historial");
+    const statTotal = document.getElementById("stat-total");
+    const statPlaquetas = document.getElementById("stat-plaquetas");
+    const statConTurno = document.getElementById("stat-con-turno");
+    const statSinTurno = document.getElementById("stat-sin-turno");
+
+    let datosGlobales = [];
+
+    // Inicializar el calendario con la fecha de hoy por defecto
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    inputCalendario.value = `${anio}-${mes}-${dia}`;
+
+    // Escucha en tiempo real la rama 'historial' de Firebase
+    onValue(ref(db, 'historial'), (snapshot) => {
+      if (snapshot.exists()) {
+        const registros = snapshot.val();
+        datosGlobales = Object.values(registros);
+        renderizarVista();
+      } else {
+        cuerpoHistorial.innerHTML = `<tr><td colspan="4" class="sin-datos">No hay llamados registrados en la base de datos.</td></tr>`;
+        statTotal.textContent = "0";
+        statPlaquetas.textContent = "0";
+        statConTurno.textContent = "0";
+        statSinTurno.textContent = "0";
+      }
+    });
+
+    // Eventos para actualizar la vista en tiempo real al filtrar o buscar
+    inputCalendario.addEventListener("change", renderizarVista);
+    inputBuscador.addEventListener("input", renderizarVista);
+
+    function renderizarVista() {
+      const fechaElegida = inputCalendario.value; // Formato "YYYY-MM-DD"
+      const textoBusqueda = inputBuscador.value.trim().toLowerCase();
+
+      // Filtrar los registros
+      const filtrados = datosGlobales.filter(item => {
+        if (!item.timestamp) return false;
+
+        // 1. Filtro por buscador de texto (si se escribió algo)
+        if (textoBusqueda) {
+          const identificador = (item.identificador || "").toLowerCase();
+          if (!identificador.includes(textoBusqueda)) {
+            return false;
+          }
+        }
+
+        // 2. Filtro por calendario (si hay una fecha seleccionada y el buscador está vacío)
+        // Nota: Si el usuario está usando el buscador de texto, permitimos buscar en todo el historial sin restringir a una sola fecha.
+        if (!textoBusqueda && fechaElegida) {
+          const d = new Date(item.timestamp);
+          const anioD = d.getFullYear();
+          const mesD = String(d.getMonth() + 1).padStart(2, '0');
+          const diaD = String(d.getDate()).padStart(2, '0');
+          if (`${anioD}-${mesD}-${diaD}` !== fechaElegida) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Ordenar del más reciente al más antiguo
+      filtrados.sort((a, b) => b.timestamp - a.timestamp);
+
+      // Contadores específicos
+      let countPlaquetas = 0;
+      let countConTurno = 0;
+      let countSinTurno = 0;
+
+      let filasHTML = "";
+
+      filtrados.forEach(item => {
+        const fechaHoraObj = new Date(item.timestamp);
+        const fechaStr = fechaHoraObj.toLocaleDateString('es-AR');
+        const horaStr = fechaHoraObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const sectorLimpio = item.sector || "General";
+        const tipoAtencion = item.tipo || "";
+
+        const tipoLower = tipoAtencion.toLowerCase();
+        if (tipoLower.includes('plaqueta')) {
+          countPlaquetas++;
+        }
+        if (tipoLower.includes('sin turno')) {
+          countSinTurno++;
+        } else if (tipoLower.includes('con turno') || tipoLower.includes('sangre total')) {
+          countConTurno++;
+        }
+
+        const destinoTexto = item.consultorio || '-';
+        const badgeTipo = tipoAtencion ? `<span class="badge-tipo">${tipoAtencion}</span>` : '';
+
+        // Mostrar fecha completa si está buscando en modo global con el buscador de texto
+        const columnaFecha = textoBusqueda ? `${fechaStr} - ${horaStr} hs` : `${horaStr} hs`;
+
+        filasHTML += `
+          <tr>
+            <td><strong>${columnaFecha}</strong></td>
+            <td><span class="badge-sector sector-${sectorLimpio}">${sectorLimpio}</span></td>
+            <td>${destinoTexto} ${badgeTipo}</td>
+            <td><strong>${item.identificador}</strong></td>
+          </tr>
+        `;
+      });
+
+      if (filtrados.length === 0) {
+        cuerpoHistorial.innerHTML = `<tr><td colspan="4" class="sin-datos">No se encontraron registros que coincidan con la búsqueda.</td></tr>`;
+      } else {
+        cuerpoHistorial.innerHTML = filasHTML;
+      }
+
+      // Actualizar tarjetas de estadísticas
+      statTotal.textContent = filtrados.length;
+      statPlaquetas.textContent = countPlaquetas;
+      statConTurno.textContent = countConTurno;
+      statSinTurno.textContent = countSinTurno;
+    }
+  </script>
+</body>
+</html>
