@@ -415,4 +415,34 @@
 
       function tocarBeepPotente(freq, startTime, duration) {
         const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.35, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      }
+
+      if (sector === "Recepcion") {
+        tocarBeepPotente(880.00, now, 0.25);
+        tocarBeepPotente(659.25, now + 0.28, 0.35);
+      } else if (sector === "Entrevista") {
+        tocarBeepPotente(783.99, now, 0.15);
+        tocarBeepPotente(987.77, now + 0.18, 0.15);
+        tocarBeepPotente(1174.66, now + 0.36, 0.25);
+      } else if (sector === "Extraccion") {
+        tocarBeepPotente(987.77, now, 0.12);
+        tocarBeepPotente(987.77, now + 0.15, 0.12);
+        tocarBeepPotente(1318.51, now + 0.30, 0.30);
+      }
+    }
+  </script>
+</body>
+</html>
