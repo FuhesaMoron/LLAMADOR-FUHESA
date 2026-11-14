@@ -282,6 +282,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Declaración correcta de la variable global de audio
+    let audioCtx = null;
+
     function actualizarReloj() {
       const ahora = new Date();
       document.getElementById("reloj-digital").textContent = ahora.toLocaleTimeString('es-AR');
@@ -400,7 +403,7 @@
       }
     });
 
-function reproducirTonoSector(sector) {
+    function reproducirTonoSector(sector) {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
@@ -410,58 +413,6 @@ function reproducirTonoSector(sector) {
 
       const now = audioCtx.currentTime;
 
-      // Función auxiliar para crear un tono potente con ganancia alta
       function tocarBeepPotente(freq, startTime, duration) {
         const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = 'sine'; // Onda limpia y penetrante
-        osc.frequency.setValueAtTime(freq, startTime);
-
-        // Subimos el volumen al máximo seguro (0.35) con un pequeño desvanecimiento final
-        gain.gain.setValueAtTime(0.35, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start(startTime);
-        osc.stop(startTime + duration);
-      }
-
-      // Tono fuerte y distintivo según el sector
-      if (sector === "Recepcion") {
-        // Tono doble tipo timbre clásico fuerte (Ding-Dong)
-        tocarBeepPotente(880.00, now, 0.25);       // Nota aguda
-        tocarBeepPotente(659.25, now + 0.28, 0.35); // Nota más grave de cierre
-      } else if (sector === "Entrevista") {
-        // Tono triple ascendente rápido (más dinámico)
-        tocarBeepPotente(783.99, now, 0.15);
-        tocarBeepPotente(987.77, now + 0.18, 0.15);
-        tocarBeepPotente(1174.66, now + 0.36, 0.25);
-      } else if (sector === "Extraccion") {
-        // Alarma de alerta potente (3 bips bien agudos y firmes)
-        tocarBeepPotente(987.77, now, 0.12);
-        tocarBeepPotente(987.77, now + 0.15, 0.12);
-        tocarBeepPotente(1318.51, now + 0.30, 0.30);
-      }
-    }
-
-    function tocarBeep(ctx, frecuencia, inicio, duracion) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = frecuencia;
-      
-      gain.gain.setValueAtTime(0.25, inicio);
-      gain.gain.exponentialRampToValueAtTime(0.001, inicio + duracion);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.start(inicio);
-      osc.stop(inicio + duracion);
-    }
-  </script>
-</body>
-</html>
+        const gain = audioCtx.createGain
