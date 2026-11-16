@@ -258,12 +258,12 @@
     .copo {
       position: absolute;
       top: -10px;
-      background: white;
+      background: #ffffff;
       border-radius: 50%;
-      opacity: 0.5;
+      opacity: 1; /* Sin transparencia fantasma */
+      box-shadow: 0 0 8px #ffffff; /* Brillo blanco fuerte para forzar al panel de la TV */
       animation: caida 10s linear infinite;
     }
-
     @keyframes caida {
       0% { transform: translateY(-10px) translateX(0); }
       100% { transform: translateY(105vh) translateX(20px); }
