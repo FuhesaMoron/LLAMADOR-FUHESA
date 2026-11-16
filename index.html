@@ -28,8 +28,20 @@
       width: 100%;
       height: 4px;
       background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #38bdf8);
-      z-index: 1001;
+      z-index: 10001;
       box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Capa contenedora exclusiva para efectos navideños en TV */
+    #capa-navidena {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
     }
 
     #btn-fullscreen {
@@ -45,7 +57,7 @@
       font-weight: bold;
       cursor: pointer;
       transition: all 0.2s;
-      z-index: 1000;
+      z-index: 10000;
     }
     #btn-fullscreen:hover {
       background: #334155;
@@ -242,16 +254,14 @@
       font-weight: 600;
     }
 
-    /* Estilos corregidos para los copos de nieve */
+    /* Estilos para los copos de nieve dentro de la capa */
     .copo {
-      position: fixed;
+      position: absolute;
       top: -10px;
       background: white;
       border-radius: 50%;
-      opacity: 0.4;
-      pointer-events: none;
-      animation: caida 10s linear infinite; /* <--- Duración agregada aquí */
-      z-index: 1;
+      opacity: 0.5;
+      animation: caida 10s linear infinite;
     }
 
     @keyframes caida {
@@ -259,19 +269,17 @@
       100% { transform: translateY(105vh) translateX(20px); }
     }
 
-    /* Estilos para los destellos dorados parpadeantes */
+    /* Estilos para los destellos dorados parpadeantes dentro de la capa */
     .destello {
-      position: fixed;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.8) 0%, transparent 70%);
+      position: absolute;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.9) 0%, transparent 70%);
       border-radius: 50%;
-      pointer-events: none;
       animation: parpadeoDestello ease-in-out infinite;
-      z-index: 1;
     }
 
     @keyframes parpadeoDestello {
-      0%, 100% { opacity: 0.15; transform: scale(0.7); }
-      50% { opacity: 0.85; transform: scale(1.3); }
+      0%, 100% { opacity: 0.2; transform: scale(0.7); }
+      50% { opacity: 0.9; transform: scale(1.4); }
     }
 
     /* Pie de página navideño */
@@ -305,6 +313,9 @@
   </style>
 </head>
 <body>
+
+  <!-- Capa fija donde la TV dibujará obligatoriamente la nieve y destellos -->
+  <div id="capa-navidena"></div>
 
   <button id="btn-fullscreen">📺 Pantalla Completa</button>
 
@@ -371,7 +382,6 @@
 
     let audioCtx = null;
 
-    // Monitor de conexión en vivo a Firebase
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -542,14 +552,15 @@
       }
     }
 
-    // Efecto de nieve ambiental
+    // Generar nieve dentro de la capa dedicada para TV
     function crearNieve() {
+      const capa = document.getElementById('capa-navidena');
       const cantidadCopos = 20;
       for (let i = 0; i < cantidadCopos; i++) {
         const copo = document.createElement('div');
         copo.classList.add('copo');
         
-        const tamaño = Math.random() * 4 + 2 + 'px';
+        const tamaño = Math.random() * 5 + 3 + 'px';
         copo.style.width = tamaño;
         copo.style.height = tamaño;
         copo.style.left = Math.random() * 100 + 'vw';
@@ -558,19 +569,20 @@
         copo.style.animationDuration = duracion;
         copo.style.animationDelay = Math.random() * 5 + 's';
         
-        document.body.appendChild(copo);
+        capa.appendChild(copo);
       }
     }
     crearNieve();
 
-    // Efecto de destellos luminosos dorados parpadeantes
+    // Generar destellos dentro de la capa dedicada para TV
     function crearDestellos() {
+      const capa = document.getElementById('capa-navidena');
       const cantidadDestellos = 12;
       for (let i = 0; i < cantidadDestellos; i++) {
         const destello = document.createElement('div');
         destello.classList.add('destello');
         
-        const tamaño = Math.random() * 25 + 10 + 'px';
+        const tamaño = Math.random() * 30 + 15 + 'px';
         destello.style.width = tamaño;
         destello.style.height = tamaño;
         destello.style.left = Math.random() * 100 + 'vw';
@@ -580,7 +592,7 @@
         destello.style.animationDuration = duracion;
         destello.style.animationDelay = Math.random() * 3 + 's';
         
-        document.body.appendChild(destello);
+        capa.appendChild(destello);
       }
     }
     crearDestellos();
