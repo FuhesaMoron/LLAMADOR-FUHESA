@@ -51,6 +51,13 @@
     h1 { margin: 0; font-size: 2.2rem; color: #f8fafc; letter-spacing: 1px; }
     .subtitulo { color: #94a3b8; font-size: 1.1rem; margin-top: 4px; }
 
+    .header-derecha {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-right: 140px;
+    }
+
     #reloj-digital {
       font-size: 2rem;
       font-weight: 900;
@@ -60,8 +67,11 @@
       border-radius: 12px;
       border: 2px solid #334155;
       letter-spacing: 1px;
-      margin-right: 140px;
     }
+
+    .estado-red { font-size: 0.85rem; font-weight: bold; padding: 8px 14px; border-radius: 12px; background: #1e293b; border: 2px solid #334155; color: #94a3b8; }
+    .estado-online { border-color: #166534; color: #4ade80; background: #064e3b; }
+    .estado-offline { border-color: #991b1b; color: #f87171; background: #7f1d1d; }
 
     .main-layout {
       display: grid;
@@ -234,7 +244,10 @@
       <h1>FUNDACIÓN HEMATOLÓGICA SARMIENTO</h1>
       <div class="subtitulo">Sala de Espera - Turnos y Llamados</div>
     </div>
-    <div id="reloj-digital">00:00:00</div>
+    <div class="header-derecha">
+      <span id="badge-conexion" class="estado-red">● Conectando...</span>
+      <div id="reloj-digital">00:00:00</div>
+    </div>
   </header>
 
   <div class="main-layout">
@@ -282,8 +295,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Declaración correcta de la variable global de audio
     let audioCtx = null;
+
+    // Monitor de conexión en vivo a Firebase para la Tele
+    onValue(ref(db, ".info/connected"), (snap) => {
+      const badge = document.getElementById("badge-conexion");
+      if (snap.val() === true) {
+        badge.textContent = "● En línea";
+        badge.className = "estado-red estado-online";
+      } else {
+        badge.textContent = "● Sin red / Reconectando";
+        badge.className = "estado-red estado-offline";
+      }
+    });
 
     function actualizarReloj() {
       const ahora = new Date();
