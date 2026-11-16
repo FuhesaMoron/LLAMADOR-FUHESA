@@ -20,7 +20,17 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
       margin-top: 10px;
     }
-    h2 { text-align: center; color: #990000; margin-bottom: 15px; margin-top: 0; font-size: 1.7rem; font-weight: 800; }
+    .header-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    h2 { color: #990000; margin: 0; font-size: 1.6rem; font-weight: 800; }
+
+    .estado-red { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; background: #e2e8f0; color: #475569; }
+    .estado-online { background: #dcfce7; color: #166534; }
+    .estado-offline { background: #fee2e2; color: #991b1b; }
     
     /* Caja de último llamado de extracción */
     .ultimo-box {
@@ -40,7 +50,6 @@
     .ultimo-aviso { font-size: 0.8rem; color: #990000; margin-top: 6px; font-weight: bold; }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
-    
     .campo-grupo { margin-bottom: 18px; }
 
     select, input { 
@@ -71,14 +80,15 @@
       transition: background 0.2s, transform 0.1s;
       margin-top: 5px;
     }
-    .btn-principal:active { transform: scale(0.98); }
+    .btn-principal:active:not(:disabled) { transform: scale(0.98); }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
 
     #btn-llamar { 
       background: #990000; 
       color: white; 
       box-shadow: 0 4px 12px rgba(153,0,0,0.3);
     }
-    #btn-llamar:hover { background: #7a0000; }
+    #btn-llamar:hover:not(:disabled) { background: #7a0000; }
 
     #btn-repetir { 
       background: #ffc107; 
@@ -129,7 +139,10 @@
 
   <div id="panel-contenido" style="display: none;">
     <div class="container">
-      <h2>Panel - Extracción</h2>
+      <div class="header-panel">
+        <h2>Panel - Extracción</h2>
+        <span id="badge-conexion" class="estado-red">Conectando...</span>
+      </div>
 
       <!-- Caja táctil para repetir el último llamado -->
       <div class="ultimo-box" id="box-repetir-tactil" title="Tocá aquí para repetir">
@@ -143,7 +156,7 @@
       <div class="campo-grupo">
         <label>Tipo de Procedimiento:</label>
         <select id="tipo-atencion">
-          <option value="Sangre Total" selected>Sangre Total</option>
+          <option value="Sangre" selected>Sangre</option>
           <option value="Plaquetas">Plaquetas (Aféresis)</option>
         </select>
       </div>
@@ -151,7 +164,7 @@
       <!-- Nombre y Apellido (Obligatorio) -->
       <div class="campo-grupo">
         <label>Nombre y Apellido del Donante:</label>
-        <input type="text" id="id" placeholder="Ej: Juan Pérez" autocomplete="off">
+        <input type="text" id="id" placeholder="Ej: Juan Pérez" autocomplete="off" autocapitalize="words">
       </div>
 
       <!-- Aviso visual de error -->
@@ -173,6 +186,14 @@
 
     const inputNombre = document.getElementById("id");
     const errorAviso = document.getElementById("error-aviso");
+    let bloqueadoPorRebote = false;
+
+    function capitalizarNombre(texto) {
+      return texto
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, letra => letra.toUpperCase());
+    }
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
@@ -200,6 +221,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Semáforo de conexión en vivo a Firebase
+    onValue(ref(db, ".info/connected"), (snap) => {
+      const badge = document.getElementById("badge-conexion");
+      if (snap.val() === true) {
+        badge.textContent = "● En línea";
+        badge.className = "estado-red estado-online";
+      } else {
+        badge.textContent = "● Sin red";
+        badge.className = "estado-red estado-offline";
+      }
+    });
+
     onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
@@ -224,15 +257,28 @@
     }
 
     function ejecutarLlamado() {
+      if (bloqueadoPorRebote) return;
+
       const tipo = document.getElementById("tipo-atencion").value;
-      const i = inputNombre.value.trim();
+      const rawNombre = inputNombre.value.trim();
       
-      if (!i) {
+      if (!rawNombre) {
         errorAviso.style.display = "block";
         inputNombre.focus();
         return;
       }
       errorAviso.style.display = "none";
+
+      const i = capitalizarNombre(rawNombre);
+
+      // Bloqueo anti-rebote táctil (800ms)
+      bloqueadoPorRebote = true;
+      const btnLlamar = document.getElementById("btn-llamar");
+      btnLlamar.disabled = true;
+      setTimeout(() => {
+        bloqueadoPorRebote = false;
+        btnLlamar.disabled = false;
+      }, 800);
 
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -247,7 +293,7 @@
 
       set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
         inputNombre.value = "";
-        document.getElementById("tipo-atencion").value = "Sangre Total";
+        document.getElementById("tipo-atencion").value = "Sangre";
         inputNombre.focus();
       });
 
@@ -294,3 +340,4 @@
     });
   </script>
 </body>
+</html>
