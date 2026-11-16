@@ -254,22 +254,23 @@
       font-weight: 600;
     }
 
-    /* Estilos para los copos de nieve dentro de la capa */
+    /* Copos de nieve de texto nítido 100% compatible con Smart TV */
     .copo {
       position: absolute;
-      top: -10px;
-      background: #ffffff;
-      border-radius: 50%;
-      opacity: 1; /* Sin transparencia fantasma */
-      box-shadow: 0 0 8px #ffffff; /* Brillo blanco fuerte para forzar al panel de la TV */
+      top: -20px;
+      color: #ffffff !important;
+      text-shadow: 0 0 8px #ffffff, 0 0 12px #ffffff;
       animation: caida 10s linear infinite;
+      user-select: none;
+      pointer-events: none;
     }
+
     @keyframes caida {
-      0% { transform: translateY(-10px) translateX(0); }
+      0% { transform: translateY(-20px) translateX(0); }
       100% { transform: translateY(105vh) translateX(20px); }
     }
 
-    /* Estilos para los destellos dorados parpadeantes dentro de la capa */
+    /* Destellos dorados parpadeantes */
     .destello {
       position: absolute;
       background: radial-gradient(circle, rgba(245, 158, 11, 0.9) 0%, transparent 70%);
@@ -314,7 +315,7 @@
 </head>
 <body>
 
-  <!-- Capa fija donde la TV dibujará obligatoriamente la nieve y destellos -->
+  <!-- Capa fija exclusiva para la TV -->
   <div id="capa-navidena"></div>
 
   <button id="btn-fullscreen">📺 Pantalla Completa</button>
@@ -552,18 +553,19 @@
       }
     }
 
-    // Generar nieve dentro de la capa dedicada para TV
+    // Generador de copos de nieve con texto nítido ❄
     function crearNieve() {
       const capa = document.getElementById('capa-navidena');
       const cantidadCopos = 20;
       for (let i = 0; i < cantidadCopos; i++) {
         const copo = document.createElement('div');
         copo.classList.add('copo');
+        copo.textContent = '❄';
         
-        const tamaño = Math.random() * 5 + 3 + 'px';
-        copo.style.width = tamaño;
-        copo.style.height = tamaño;
         copo.style.left = Math.random() * 100 + 'vw';
+        
+        const tamaño = Math.random() * 12 + 10 + 'px';
+        copo.style.fontSize = tamaño;
         
         const duracion = Math.random() * 7 + 8 + 's';
         copo.style.animationDuration = duracion;
@@ -574,7 +576,7 @@
     }
     crearNieve();
 
-    // Generar destellos dentro de la capa dedicada para TV
+    // Generador de destellos luminosos
     function crearDestellos() {
       const capa = document.getElementById('capa-navidena');
       const cantidadDestellos = 12;
