@@ -50,6 +50,7 @@
     }
     h1 { margin: 0; font-size: 2.2rem; color: #f8fafc; letter-spacing: 1px; }
     .subtitulo { color: #94a3b8; font-size: 1.1rem; margin-top: 4px; }
+    .subtitulo::after { content: " 🎄✨"; }
 
     .header-derecha {
       display: flex;
@@ -80,6 +81,7 @@
       flex: 1;
       align-items: stretch;
       min-height: 0;
+      margin-bottom: 50px; /* Espacio para el footer navideño */
     }
 
     .grid-sectores {
@@ -225,6 +227,43 @@
       font-weight: 600;
     }
 
+    /* Estilos para los copos de nieve */
+    .copo {
+      position: fixed;
+      top: -10px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.3;
+      pointer-events: none;
+      animation: caida linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes caida {
+      0% { transform: translateY(-10px) translateX(0); }
+      100% { transform: translateY(105vh) translateX(20px); }
+    }
+
+    /* Pie de página navideño */
+    .footer-navideno {
+      position: absolute;
+      bottom: 15px;
+      left: 25px;
+      right: 25px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f8fafc;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 10;
+      letter-spacing: 0.5px;
+      transition: opacity 0.3s ease;
+    }
+
     @keyframes parpadeo {
       0% { opacity: 1; transform: scale(1.02); }
       50% { opacity: 0.6; transform: scale(1.04); }
@@ -279,6 +318,11 @@
     </div>
   </div>
 
+  <!-- Pie de página navideño -->
+  <div class="footer-navideno" id="texto-rotativo">
+    🎄 Gracias por regalar vida en estas fiestas • FU.HE.SA 🎁
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -297,7 +341,7 @@
 
     let audioCtx = null;
 
-    // Monitor de conexión en vivo a Firebase para la Tele
+    // Monitor de conexión en vivo a Firebase
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -467,6 +511,47 @@
         tocarBeepPotente(1318.51, now + 0.30, 0.30);
       }
     }
+
+    // Efecto de nieve ambiental (se genera de forma automática al cargar la página)
+    function crearNieve() {
+      const cantidadCopos = 15;
+      for (let i = 0; i < cantidadCopos; i++) {
+        const copo = document.createElement('div');
+        copo.classList.add('copo');
+        
+        const tamaño = Math.random() * 4 + 2 + 'px';
+        copo.style.width = tamaño;
+        copo.style.height = tamaño;
+        copo.style.left = Math.random() * 100 + 'vw';
+        
+        const duracion = Math.random() * 7 + 8 + 's';
+        copo.style.animationDuration = duracion;
+        copo.style.animationDelay = Math.random() * 5 + 's';
+        
+        document.body.appendChild(copo);
+      }
+    }
+    crearNieve();
+
+    // Rotador de mensajes navideños en el pie de página
+    const mensajesNavidenos = [
+      "🎄 Gracias por regalar vida en estas fiestas • FU.HE.SA",
+      "🎅 Recordá mantenerte hidratado antes y después de tu donación 💧",
+      "✨ Tu solidaridad es el mejor regalo de Navidad para quienes lo necesitan ❤️",
+      "🌟 ¡Felices Fiestas y gracias por ser parte de nuestra comunidad de donantes!"
+    ];
+
+    let indiceMensaje = 0;
+    const elFooter = document.getElementById("texto-rotativo");
+
+    setInterval(() => {
+      indiceMensaje = (indiceMensaje + 1) % mensajesNavidenos.length;
+      elFooter.style.opacity = 0;
+      setTimeout(() => {
+        elFooter.textContent = mensajesNavidenos[indiceMensaje];
+        elFooter.style.opacity = 1;
+      }, 300);
+    }, 6000);
   </script>
 </body>
 </html>
