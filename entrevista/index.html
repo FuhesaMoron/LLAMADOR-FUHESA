@@ -37,7 +37,7 @@
       border-left: 6px solid #1e3a8a;
       padding: 14px;
       border-radius: 10px;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
       text-align: center;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
@@ -47,6 +47,64 @@
     .ultimo-valor { font-size: 1.8rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
     .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
+
+    /* 📋 Estilos para la Bandeja de Pendientes desde Recepción */
+    .bandeja-pendientes {
+      background: #f0fdf4;
+      border: 2px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+    .bandeja-titulo {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #166534;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .lista-pendientes {
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .item-pendiente {
+      background: white;
+      border: 1px solid #d1d5db;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .item-pendiente:hover {
+      background: #dcfce7;
+      border-color: #22c55e;
+      transform: translateX(2px);
+    }
+    .item-pendiente-nombre {
+      font-weight: 800;
+      color: #111827;
+      font-size: 1.05rem;
+    }
+    .badge-tipo {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #334155;
+    }
+    .badge-tipo.club { background: #fef3c7; color: #b45309; }
+    .badge-tipo.plaquetas { background: #ffe4e6; color: #be123c; }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
     .campo-grupo { margin-bottom: 18px; }
@@ -143,6 +201,15 @@
         <span id="badge-conexion" class="estado-red">Conectando...</span>
       </div>
 
+      <!-- 📋 BANDEJA DE PACIENTES PENDIENTES DESDE RECEPCIÓN -->
+      <div class="bandeja-pendientes" id="contenedor-bandeja" style="display: none;">
+        <div class="bandeja-titulo">
+          <span>📋 Pacientes Derivados de Recepción</span>
+          <span id="contador-pendientes" style="background: #166534; color: white; padding: 1px 8px; border-radius: 10px; font-size: 0.8rem;">0</span>
+        </div>
+        <div class="lista-pendientes" id="lista-pendientes-html"></div>
+      </div>
+
       <div class="ultimo-box" id="box-repetir-tactil" title="Tocá aquí para repetir">
         <div class="ultimo-titulo">Último llamado en Entrevista</div>
         <div class="ultimo-valor" id="ultimo-donante">-</div>
@@ -184,7 +251,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const CLAVE_SECRETA = "fuhesa2026"; 
     const WEBHOOK_URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec";
@@ -192,9 +259,11 @@
 
     const selectConsultorio = document.getElementById("cons");
     const inputNombre = document.getElementById("id");
+    const selectTipoAtencion = document.getElementById("tipo-atencion");
     const errorAviso = document.getElementById("error-aviso");
     let bloqueadoPorRebote = false;
     let ultimoLlamadoLocal = null;
+    let idPendienteActualFirebaseKey = null; // Guarda la clave única en Firebase si fue seleccionado de la bandeja
 
     const consultorioGuardado = localStorage.getItem("fuhesa_entrevista_cons");
     if (consultorioGuardado) {
@@ -249,6 +318,50 @@
       }
     });
 
+    // 📋 Escuchar en tiempo real la cola de pendientes enviada desde Recepción
+    onValue(ref(db, 'cola_entrevista'), (snapshot) => {
+      const contenedorBandeja = document.getElementById("contenedor-bandeja");
+      const listaHtml = document.getElementById("lista-pendientes-html");
+      const contador = document.getElementById("contador-pendientes");
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const items = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
+        
+        contador.textContent = items.length;
+        contenedorBandeja.style.display = "block";
+        
+        let html = "";
+        items.forEach(([firebaseKey, paciente]) => {
+          let claseBadge = "";
+          if (paciente.tipo === "Club de Donantes") claseBadge = "club";
+          if (paciente.tipo === "Plaquetas") claseBadge = "plaquetas";
+
+          html += `
+            <div class="item-pendiente" data-key="${firebaseKey}" data-nombre="${paciente.identificador}" data-tipo="${paciente.tipo}">
+              <span class="item-pendiente-nombre">👤 ${paciente.identificador}</span>
+              <span class="badge-tipo ${claseBadge}">${paciente.tipo}</span>
+            </div>
+          `;
+        });
+        listaHtml.innerHTML = html;
+
+        // Agregar evento de clic a cada paciente de la lista para seleccionarlo automáticamente
+        document.querySelectorAll(".item-pendiente").forEach(el => {
+          el.addEventListener("click", () => {
+            idPendienteActualFirebaseKey = el.getAttribute("data-key");
+            inputNombre.value = el.getAttribute("data-nombre");
+            selectTipoAtencion.value = el.getAttribute("data-tipo");
+            inputNombre.focus();
+          });
+        });
+
+      } else {
+        contenedorBandeja.style.display = "none";
+        listaHtml.innerHTML = "";
+      }
+    });
+
     onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
@@ -276,7 +389,7 @@
       if (bloqueadoPorRebote) return;
 
       const c = selectConsultorio.value;
-      const tipo = document.getElementById("tipo-atencion").value;
+      const tipo = selectTipoAtencion.value;
       const rawNombre = inputNombre.value.trim();
       
       if (!rawNombre) {
@@ -288,7 +401,6 @@
 
       const i = capitalizarNombre(rawNombre);
 
-      // Bloqueo anti-rebote táctil y feedback visual instantáneo ("Llamando...")
       bloqueadoPorRebote = true;
       const btnLlamar = document.getElementById("btn-llamar");
       btnLlamar.disabled = true;
@@ -317,9 +429,15 @@
 
       set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
         inputNombre.value = "";
-        document.getElementById("tipo-atencion").value = "Sin Turno";
+        selectTipoAtencion.value = "Sin Turno";
         inputNombre.focus();
       });
+
+      // Si el paciente vino de la bandeja de pendientes, lo borramos de cola_entrevista para que no quede duplicado
+      if (idPendienteActualFirebaseKey) {
+        remove(ref(db, `cola_entrevista/${idPendienteActualFirebaseKey}`)).catch(err => console.error(err));
+        idPendienteActualFirebaseKey = null;
+      }
 
       push(ref(db, 'historial'), datosLlamado);
       guardarDonanteEnSheets({ 
