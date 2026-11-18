@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel Recepción - FU.HE.SA</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 22px; max-width: 400px; margin: auto; background: #f8f9fa; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 22px; max-width: 420px; margin: auto; background: #f8f9fa; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; }
     .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     h2 { color: #1e3a8a; margin: 0; font-size: 1.4rem; }
     
@@ -43,18 +43,42 @@
     #btn-repetir { background: #ffc107; color: #212529; margin-top: 8px; font-size: 0.95rem; }
     #btn-repetir:hover { background: #e0a800; }
 
+    /* Estilo para la sección de Derivación a Entrevista */
+    .seccion-derivacion {
+      background: #eff6ff;
+      border: 2px dashed #93c5fd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      margin-bottom: 12px;
+    }
+    .seccion-derivacion h3 {
+      font-size: 0.95rem;
+      color: #1e40af;
+      margin: 0 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    #btn-derivar {
+      background: #10b981;
+      color: white;
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+    #btn-derivar:hover:not(:disabled) { background: #059669; }
+
     .atajos-info {
       background: #eef2f6;
       border-radius: 6px;
       padding: 8px 10px;
-      margin-top: 12px;
+      margin-top: 10px;
       font-size: 0.78rem;
       color: #495057;
       text-align: center;
       line-height: 1.4;
     }
     
-    .separador { border: 0; border-top: 1px solid #dee2e6; margin: 14px 0 10px 0; }
+    .separador { border: 0; border-top: 1px solid #dee2e6; margin: 12px 0 10px 0; }
     #btn-limpiar { background: #dc3545; color: white; font-size: 0.88rem; padding: 9px; }
     #btn-limpiar:hover { background: #b02a37; }
 
@@ -106,6 +130,24 @@
     <button id="btn-llamar">Llamar Donante (Escrito)</button>
     <button id="btn-repetir">📢 Repetir Último Llamado</button>
 
+    <!-- 📋 NUEVO MÓDULO: Derivación a Entrevista -->
+    <div class="seccion-derivacion">
+      <h3>➡️ Derivar a Entrevista</h3>
+      
+      <label style="font-size: 0.85rem; margin-bottom: 3px;">Tipo de Atención:</label>
+      <select id="derivar-tipo" style="margin-bottom: 8px;">
+        <option value="Sin Turno" selected>Sin Turno</option>
+        <option value="Club de Donantes">Club de Donantes (Prioridad)</option>
+        <option value="Plaquetas">Plaquetas</option>
+        <option value="Turno">Turno</option>
+      </select>
+
+      <label style="font-size: 0.85rem; margin-bottom: 3px;">Nombre y Apellido del Donante:</label>
+      <input type="text" id="derivar-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
+
+      <button id="btn-derivar">📤 Enviar a Entrevista</button>
+    </div>
+
     <div class="atajos-info">
       ⌨️ <b>Atajos:</b> <b>Enter/Espacio</b> = Siguiente | <b>Enter</b> en texto = Llamar | <b>Alt+R</b> = Repetir
     </div>
@@ -126,6 +168,14 @@
 
     function formatearNumero(num) {
       return String(num % 100).padStart(2, '0');
+    }
+
+    function capitalizarNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, letra => letra.toUpperCase());
     }
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
@@ -153,7 +203,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Monitor de conexión en vivo a Firebase
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -209,7 +258,6 @@
       const i = identificadorTexto.trim();
       if (!i) return;
 
-      // Bloqueo de 800ms para evitar dobles llamados accidentales
       bloqueadoPorRebote = true;
       const btnSig = document.getElementById("btn-siguiente");
       const btnLla = document.getElementById("btn-llamar");
@@ -274,14 +322,52 @@
       }
     });
 
+    // 📋 LÓGICA DE DERIVACIÓN A ENTREVISTA
+    function derivarAEntrevista() {
+      const rawNombre = document.getElementById("derivar-nombre").value;
+      if (!rawNombre.trim()) {
+        alert("Por favor escribí el nombre y apellido del donante para derivar.");
+        document.getElementById("derivar-nombre").focus();
+        return;
+      }
+
+      const nombreLimpio = capitalizarNombre(rawNombre);
+      const tipoAtencion = document.getElementById("derivar-tipo").value;
+
+      const datosDerivacion = {
+        identificador: nombreLimpio,
+        tipo: tipoAtencion,
+        timestamp: Date.now()
+      };
+
+      // Guardamos en Firebase dentro de la cola de pendientes para entrevista
+      push(ref(db, 'cola_entrevista'), datosDerivacion).then(() => {
+        document.getElementById("derivar-nombre").value = "";
+        document.getElementById("derivar-tipo").value = "Sin Turno";
+        alert(`✅ Donante "${nombreLimpio}" derivado a Entrevista correctamente.`);
+      }).catch(err => {
+        console.error("Error al derivar:", err);
+        alert("Hubo un error al derivar el paciente. Verificá tu conexión.");
+      });
+    }
+
+    document.getElementById("btn-derivar").addEventListener("click", derivarAEntrevista);
+    document.getElementById("derivar-nombre").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        derivarAEntrevista();
+      }
+    });
+
     document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
 
     document.addEventListener("keydown", (e) => {
       if (document.getElementById("panel-contenido").style.display === "none") return;
 
       const inputLibre = document.getElementById("id");
+      const inputDerivacion = document.getElementById("derivar-nombre");
 
-      if ((e.key === "Enter" || e.code === "Space") && document.activeElement !== inputLibre && document.activeElement.tagName !== "SELECT") {
+      if ((e.key === "Enter" || e.code === "Space") && document.activeElement !== inputLibre && document.activeElement !== inputDerivacion && document.activeElement.tagName !== "SELECT") {
         e.preventDefault();
         llamarSiguiente();
       }
@@ -292,7 +378,6 @@
       }
     });
 
-    // Solo limpia la pantalla activa de la Tele, preservando el historial guardado
     document.getElementById("btn-limpiar").addEventListener("click", () => {
       const confirmar = confirm("¿Limpiar los llamados activos de la Tele para iniciar la jornada? (El historial guardado NO se borrará)");
       if (confirmar) {
