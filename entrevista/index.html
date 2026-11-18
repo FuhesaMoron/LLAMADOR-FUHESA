@@ -80,7 +80,7 @@
       margin-top: 5px;
     }
     .btn-principal:active:not(:disabled) { transform: scale(0.98); }
-    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-principal:disabled { opacity: 0.7; cursor: not-allowed; }
 
     #btn-llamar { 
       background: #007bff; 
@@ -196,7 +196,6 @@
     let bloqueadoPorRebote = false;
     let ultimoLlamadoLocal = null;
 
-    // Memoria del último consultorio seleccionado en el dispositivo
     const consultorioGuardado = localStorage.getItem("fuhesa_entrevista_cons");
     if (consultorioGuardado) {
       selectConsultorio.value = consultorioGuardado;
@@ -208,6 +207,7 @@
     function capitalizarNombre(texto) {
       return texto
         .trim()
+        .replace(/\s+/g, ' ')
         .toLowerCase()
         .replace(/\b\w/g, letra => letra.toUpperCase());
     }
@@ -238,7 +238,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Semáforo de conexión en vivo a Firebase
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -289,14 +288,19 @@
 
       const i = capitalizarNombre(rawNombre);
 
-      // Bloqueo anti-rebote táctil (800ms)
+      // Bloqueo anti-rebote táctil y feedback visual instantáneo ("Llamando...")
       bloqueadoPorRebote = true;
       const btnLlamar = document.getElementById("btn-llamar");
       btnLlamar.disabled = true;
+      btnLlamar.style.background = "#0284c7";
+      btnLlamar.textContent = "⏳ Llamando...";
+
       setTimeout(() => {
         bloqueadoPorRebote = false;
         btnLlamar.disabled = false;
-      }, 800);
+        btnLlamar.style.background = "#007bff";
+        btnLlamar.textContent = "📢 LLAMAR DONANTE";
+      }, 900);
 
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -328,7 +332,6 @@
     }
 
     function repetirLlamado() {
-      // Prioriza repetir el último llamado hecho desde este consultorio; si no hay, repite el último general del sector
       if (ultimoLlamadoLocal) {
         const datosRepetir = { ...ultimoLlamadoLocal, timestamp: Date.now() };
         set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosRepetir);
