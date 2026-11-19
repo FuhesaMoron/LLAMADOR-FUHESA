@@ -25,12 +25,15 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
+      gap: 8px;
     }
     h2 { color: #1e3a8a; margin: 0; font-size: 1.6rem; font-weight: 800; }
 
+    .estado-grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .estado-red { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; background: #e2e8f0; color: #475569; }
     .estado-online { background: #dcfce7; color: #166534; }
     .estado-offline { background: #fee2e2; color: #991b1b; }
+    .estado-sheet-err { font-size: 0.75rem; font-weight: bold; padding: 4px 9px; border-radius: 20px; background: #fef3c7; color: #92400e; display: none; }
     
     .ultimo-box {
       background: #e2e8f0;
@@ -48,7 +51,6 @@
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
     .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
 
-    /* 📋 Estilos para la Bandeja de Pendientes desde Recepción */
     .bandeja-pendientes {
       background: #f0fdf4;
       border: 2px solid #bbf7d0;
@@ -68,7 +70,7 @@
       letter-spacing: 0.5px;
     }
     .lista-pendientes {
-      max-height: 150px;
+      max-height: 180px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -77,34 +79,88 @@
     .item-pendiente {
       background: white;
       border: 1px solid #d1d5db;
-      padding: 8px 12px;
+      padding: 8px 10px;
       border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      transition: all 0.2s;
+      gap: 8px;
+      transition: all 0.15s;
     }
     .item-pendiente:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .item-pendiente.seleccionado {
       background: #dcfce7;
-      border-color: #22c55e;
-      transform: translateX(2px);
+      border: 2px solid #16a34a;
+    }
+    .item-seleccionar-zona {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex: 1;
+      gap: 8px;
+      cursor: pointer;
+      min-width: 0;
     }
     .item-pendiente-nombre {
       font-weight: 800;
       color: #111827;
-      font-size: 1.05rem;
+      font-size: 1.02rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .hora-derivacion {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 6px;
     }
     .badge-tipo {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       padding: 2px 6px;
       border-radius: 6px;
       font-weight: 700;
       background: #e2e8f0;
       color: #334155;
+      white-space: nowrap;
     }
     .badge-tipo.club { background: #fef3c7; color: #b45309; }
     .badge-tipo.plaquetas { background: #ffe4e6; color: #be123c; }
+    .badge-listo {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 800;
+      background: #16a34a;
+      color: white;
+      white-space: nowrap;
+    }
+    .btn-quitar-pendiente {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .btn-quitar-pendiente:hover {
+      background: #fecaca;
+    }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
     .campo-grupo { margin-bottom: 18px; }
@@ -198,10 +254,12 @@
     <div class="container">
       <div class="header-panel">
         <h2>Panel - Entrevista</h2>
-        <span id="badge-conexion" class="estado-red">Conectando...</span>
+        <div class="estado-grupo">
+          <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
+          <span id="badge-conexion" class="estado-red">Conectando...</span>
+        </div>
       </div>
 
-      <!-- 📋 BANDEJA DE PACIENTES PENDIENTES DESDE RECEPCIÓN -->
       <div class="bandeja-pendientes" id="contenedor-bandeja" style="display: none;">
         <div class="bandeja-titulo">
           <span>📋 Pacientes Derivados de Recepción</span>
@@ -253,24 +311,32 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const CLAVE_SECRETA = "fuhesa2026"; 
-    const WEBHOOK_URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec";
-    const SECTOR_ACTUAL = "Entrevista";
+    // 🔧 CONFIGURACIÓN CENTRALIZADA
+    const CONFIG = {
+      CLAVE_SECRETA: "fuhesa2026",
+      WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
+      SECTOR_ACTUAL: "Entrevista",
+      NODO_COLA_ENTREVISTA: "cola_entrevista",
+      ANTI_REBOTE_MS: 900,
+      STORAGE_KEY_CONSULTORIO: "fuhesa_entrevista_cons"
+    };
 
     const selectConsultorio = document.getElementById("cons");
     const inputNombre = document.getElementById("id");
     const selectTipoAtencion = document.getElementById("tipo-atencion");
     const errorAviso = document.getElementById("error-aviso");
+
     let bloqueadoPorRebote = false;
     let ultimoLlamadoLocal = null;
-    let idPendienteActualFirebaseKey = null; // Guarda la clave única en Firebase si fue seleccionado de la bandeja
+    let idPendienteActualFirebaseKey = null;
+    let fallosSheetsSesion = 0;
 
-    const consultorioGuardado = localStorage.getItem("fuhesa_entrevista_cons");
+    const consultorioGuardado = localStorage.getItem(CONFIG.STORAGE_KEY_CONSULTORIO);
     if (consultorioGuardado) {
       selectConsultorio.value = consultorioGuardado;
     }
     selectConsultorio.addEventListener("change", () => {
-      localStorage.setItem("fuhesa_entrevista_cons", selectConsultorio.value);
+      localStorage.setItem(CONFIG.STORAGE_KEY_CONSULTORIO, selectConsultorio.value);
     });
 
     function capitalizarNombre(texto) {
@@ -281,11 +347,23 @@
         .replace(/\b\w/g, letra => letra.toUpperCase());
     }
 
+    function formatearHoraCorta(timestamp) {
+      if (!timestamp) return "";
+      return new Date(timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function registrarFalloSheet() {
+      fallosSheetsSesion++;
+      const badge = document.getElementById("badge-sheet-err");
+      badge.style.display = "inline-block";
+      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
+    }
+
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
 
     function verificarClave() {
-      if (document.getElementById("input-password").value === CLAVE_SECRETA) {
+      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
         document.getElementById("login-overlay").style.display = "none";
         document.getElementById("panel-contenido").style.display = "block";
         inputNombre.focus();
@@ -318,15 +396,18 @@
       }
     });
 
-    // 📋 Escuchar en tiempo real la cola de pendientes enviada desde Recepción
-    onValue(ref(db, 'cola_entrevista'), (snapshot) => {
+    onValue(ref(db, CONFIG.NODO_COLA_ENTREVISTA), (snapshot) => {
       const contenedorBandeja = document.getElementById("contenedor-bandeja");
       const listaHtml = document.getElementById("lista-pendientes-html");
       const contador = document.getElementById("contador-pendientes");
 
       if (snapshot.exists()) {
         const data = snapshot.val();
-        const items = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
+        const items = Object.entries(data).sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+
+        if (idPendienteActualFirebaseKey && !data[idPendienteActualFirebaseKey]) {
+          idPendienteActualFirebaseKey = null;
+        }
         
         contador.textContent = items.length;
         contenedorBandeja.style.display = "block";
@@ -337,40 +418,92 @@
           if (paciente.tipo === "Club de Donantes") claseBadge = "club";
           if (paciente.tipo === "Plaquetas") claseBadge = "plaquetas";
 
+          const horaTexto = formatearHoraCorta(paciente.timestamp);
+          const estaSeleccionado = firebaseKey === idPendienteActualFirebaseKey;
+          const claseSeleccionado = estaSeleccionado ? "seleccionado" : "";
+          const etiquetaListo = estaSeleccionado ? `<span class="badge-listo">Listo</span>` : "";
+
           html += `
-            <div class="item-pendiente" data-key="${firebaseKey}" data-nombre="${paciente.identificador}" data-tipo="${paciente.tipo}">
-              <span class="item-pendiente-nombre">👤 ${paciente.identificador}</span>
-              <span class="badge-tipo ${claseBadge}">${paciente.tipo}</span>
+            <div class="item-pendiente ${claseSeleccionado}" data-key="${firebaseKey}" data-nombre="${paciente.identificador}" data-tipo="${paciente.tipo}">
+              <div class="item-seleccionar-zona">
+                <span class="item-pendiente-nombre">👤 ${paciente.identificador}</span>
+                <div class="item-meta">
+                  ${horaTexto ? `<span class="hora-derivacion">${horaTexto}</span>` : ""}
+                  ${etiquetaListo}
+                  <span class="badge-tipo ${claseBadge}">${paciente.tipo}</span>
+                </div>
+              </div>
+              <button type="button" class="btn-quitar-pendiente" data-quitar-key="${firebaseKey}" data-quitar-nombre="${paciente.identificador}" title="Quitar de la lista">✕</button>
             </div>
           `;
         });
         listaHtml.innerHTML = html;
 
-        // Agregar evento de clic a cada paciente de la lista para seleccionarlo automáticamente
-        document.querySelectorAll(".item-pendiente").forEach(el => {
-          el.addEventListener("click", () => {
-            idPendienteActualFirebaseKey = el.getAttribute("data-key");
-            inputNombre.value = el.getAttribute("data-nombre");
-            selectTipoAtencion.value = el.getAttribute("data-tipo");
+        document.querySelectorAll(".item-seleccionar-zona").forEach(zona => {
+          zona.addEventListener("click", () => {
+            const card = zona.closest(".item-pendiente");
+            idPendienteActualFirebaseKey = card.getAttribute("data-key");
+            inputNombre.value = card.getAttribute("data-nombre");
+            selectTipoAtencion.value = card.getAttribute("data-tipo");
+            if (errorAviso.style.display === "block") {
+              errorAviso.style.display = "none";
+            }
             inputNombre.focus();
+            renderizarEstadoSeleccion();
+          });
+        });
+
+        document.querySelectorAll(".btn-quitar-pendiente").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const keyQuitar = btn.getAttribute("data-quitar-key");
+            const nombreQuitar = btn.getAttribute("data-quitar-nombre");
+            if (confirm(`¿Quitar a "${nombreQuitar}" de la lista de pendientes sin llamar?`)) {
+              if (idPendienteActualFirebaseKey === keyQuitar) {
+                idPendienteActualFirebaseKey = null;
+              }
+              remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${keyQuitar}`)).catch(err => console.error(err));
+            }
           });
         });
 
       } else {
+        idPendienteActualFirebaseKey = null;
         contenedorBandeja.style.display = "none";
         listaHtml.innerHTML = "";
       }
     });
 
-    onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
+    function renderizarEstadoSeleccion() {
+      document.querySelectorAll(".item-pendiente").forEach(card => {
+        const key = card.getAttribute("data-key");
+        const meta = card.querySelector(".item-meta");
+        const badgeListoExistente = meta.querySelector(".badge-listo");
+        if (key === idPendienteActualFirebaseKey) {
+          card.classList.add("seleccionado");
+          if (!badgeListoExistente) {
+            const span = document.createElement("span");
+            span.className = "badge-listo";
+            span.textContent = "Listo";
+            const badgeTipo = meta.querySelector(".badge-tipo");
+            meta.insertBefore(span, badgeTipo);
+          }
+        } else {
+          card.classList.remove("seleccionado");
+          if (badgeListoExistente) {
+            badgeListoExistente.remove();
+          }
+        }
+      });
+    }
+
+    onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
 
       if (snapshot.exists()) {
         const datos = snapshot.val();
-        const hora = datos.timestamp 
-          ? new Date(datos.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
-          : '';
+        const hora = formatearHoraCorta(datos.timestamp);
         const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : '';
         elDonante.textContent = datos.identificador;
         elInfo.textContent = `${datos.consultorio}${etiquetaTipo}${hora ? ' • ' + hora + ' hs' : ''}`;
@@ -381,8 +514,16 @@
     });
 
     function guardarDonanteEnSheets(datos) {
-      if (!WEBHOOK_URL_GOOGLE_SHEETS || WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
-      fetch(WEBHOOK_URL_GOOGLE_SHEETS, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) }).catch(err => console.error(err));
+      if (!CONFIG.WEBHOOK_URL_GOOGLE_SHEETS || CONFIG.WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
+      fetch(CONFIG.WEBHOOK_URL_GOOGLE_SHEETS, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      }).catch((err) => {
+        console.error("Error al guardar en Sheets:", err);
+        registrarFalloSheet();
+      });
     }
 
     function ejecutarLlamado() {
@@ -412,14 +553,14 @@
         btnLlamar.disabled = false;
         btnLlamar.style.background = "#007bff";
         btnLlamar.textContent = "📢 LLAMAR DONANTE";
-      }, 900);
+      }, CONFIG.ANTI_REBOTE_MS);
 
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
       const datosLlamado = { 
         identificador: i, 
-        sector: SECTOR_ACTUAL, 
+        sector: CONFIG.SECTOR_ACTUAL, 
         consultorio: c, 
         tipo: tipo,
         timestamp: Date.now() 
@@ -427,15 +568,14 @@
 
       ultimoLlamadoLocal = datosLlamado;
 
-      set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
+      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
         inputNombre.value = "";
         selectTipoAtencion.value = "Sin Turno";
         inputNombre.focus();
       });
 
-      // Si el paciente vino de la bandeja de pendientes, lo borramos de cola_entrevista para que no quede duplicado
       if (idPendienteActualFirebaseKey) {
-        remove(ref(db, `cola_entrevista/${idPendienteActualFirebaseKey}`)).catch(err => console.error(err));
+        remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${idPendienteActualFirebaseKey}`)).catch(err => console.error(err));
         idPendienteActualFirebaseKey = null;
       }
 
@@ -443,7 +583,7 @@
       guardarDonanteEnSheets({ 
         fechaHora: fechaHoraStr, 
         identificador: i, 
-        sector: SECTOR_ACTUAL, 
+        sector: CONFIG.SECTOR_ACTUAL, 
         consultorio: `${c} (${tipo})`, 
         observacion: "" 
       });
@@ -452,17 +592,17 @@
     function repetirLlamado() {
       if (ultimoLlamadoLocal) {
         const datosRepetir = { ...ultimoLlamadoLocal, timestamp: Date.now() };
-        set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosRepetir);
+        set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosRepetir);
         push(ref(db, 'historial'), datosRepetir);
         animarFeedbackRepetir();
         return;
       }
 
-      get(ref(db, `sectores/${SECTOR_ACTUAL}`)).then((snapshot) => {
+      get(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`)).then((snapshot) => {
         if (snapshot.exists()) {
           const datos = snapshot.val();
           datos.timestamp = Date.now();
-          set(ref(db, `sectores/${SECTOR_ACTUAL}`), datos);
+          set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datos);
           push(ref(db, 'historial'), datos);
           animarFeedbackRepetir();
         } else {
