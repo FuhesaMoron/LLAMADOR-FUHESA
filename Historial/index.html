@@ -13,7 +13,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 1100px;
+      max-width: 1120px;
       margin: auto;
       background: white;
       padding: 25px;
@@ -34,21 +34,20 @@
       font-size: 1.05rem;
     }
 
-    /* Barra superior con filtros y exportación */
     .filtros-grid {
       display: grid;
-      grid-template-columns: 1fr 1.5fr auto;
-      gap: 15px;
+      grid-template-columns: 1fr 1.5fr auto auto;
+      gap: 12px;
       margin-bottom: 25px;
       align-items: end;
     }
-    @media (max-width: 768px) {
+    @media (max-width: 860px) {
       .filtros-grid { grid-template-columns: 1fr; }
     }
     .filtro-box {
       background: #f8fafc;
       border: 1px solid #cbd5e1;
-      padding: 15px;
+      padding: 14px;
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -57,7 +56,7 @@
     .filtro-box label {
       font-weight: 800;
       color: #334155;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
     }
     .filtro-box input {
       padding: 10px 14px;
@@ -70,7 +69,23 @@
     }
     .filtro-box input[type="date"] { cursor: pointer; }
 
-    /* Botón de exportación */
+    .btn-limpiar-filtros {
+      background: #e2e8f0;
+      color: #1e293b;
+      border: 2px solid #cbd5e1;
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      height: 57px;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-limpiar-filtros:hover {
+      background: #cbd5e1;
+    }
+
     .btn-exportar {
       background: #059669;
       color: white;
@@ -86,12 +101,12 @@
       gap: 8px;
       transition: background 0.2s;
       height: 57px;
+      white-space: nowrap;
     }
     .btn-exportar:hover {
       background: #047857;
     }
 
-    /* Tarjetas de estadísticas avanzadas */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -119,7 +134,9 @@
       margin-top: 5px;
     }
 
-    /* Tabla de registros */
+    .tabla-wrap {
+      overflow-x: auto;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -142,8 +159,14 @@
     tr:hover {
       background: #f1f5f9;
     }
+    .fecha-sub {
+      display: block;
+      font-size: 0.78rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-top: 2px;
+    }
     
-    /* Badges */
     .badge-sector {
       padding: 6px 12px;
       border-radius: 20px;
@@ -179,7 +202,6 @@
     <h2>Panel de Control y Donantes - FU.HE.SA</h2>
     <div class="subtitulo">Registro único, métricas de flujo, tiempos de atención y auditoría diaria</div>
 
-    <!-- Filtros -->
     <div class="filtros-grid">
       <div class="filtro-box">
         <label for="input-calendario">📅 Filtrar por Día:</label>
@@ -189,12 +211,14 @@
         <label for="input-buscador">🔍 Buscar por Nombre / Donante:</label>
         <input type="text" id="input-buscador" placeholder="Ej: Juan Pérez..." autocomplete="off">
       </div>
-      <button id="btn-exportar" class="btn-exportar" title="Descargar reporte completo en Excel">
+      <button type="button" id="btn-limpiar-filtros" class="btn-limpiar-filtros" title="Volver a hoy y limpiar búsqueda">
+        ↺ Hoy
+      </button>
+      <button type="button" id="btn-exportar" class="btn-exportar" title="Descargar reporte completo en Excel">
         📊 Exportar Excel
       </button>
     </div>
 
-    <!-- Tarjetas de Estadísticas Mejoradas -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-titulo">Donantes Únicos</div>
@@ -214,26 +238,33 @@
       </div>
     </div>
 
-    <!-- Tabla -->
-    <table id="tabla-historial">
-      <thead>
-        <tr>
-          <th>Ingreso / Cierre</th>
-          <th>Último Sector</th>
-          <th>Box / Consultorio & Tipo</th>
-          <th>Donante (Apellido y Nombre)</th>
-          <th>Tiempo en Circuito</th>
-        </tr>
-      </thead>
-      <tbody id="cuerpo-historial">
-        <tr><td colspan="5" class="sin-datos">Cargando registros...</td></tr>
-      </tbody>
-    </table>
+    <div class="tabla-wrap">
+      <table id="tabla-historial">
+        <thead>
+          <tr>
+            <th>Ingreso / Cierre</th>
+            <th>Último Sector</th>
+            <th>Box / Consultorio & Tipo</th>
+            <th>Donante (Apellido y Nombre)</th>
+            <th>Tiempo en Circuito</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-historial">
+          <tr><td colspan="5" class="sin-datos">Cargando registros...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // 🔧 CONFIGURACIÓN CENTRALIZADA
+    const CONFIG = {
+      NODO_HISTORIAL: "historial",
+      LIMITE_REGISTROS_HISTORIAL: 2500
+    };
 
     const firebaseConfig = {
       apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
@@ -249,6 +280,7 @@
 
     const inputCalendario = document.getElementById("input-calendario");
     const inputBuscador = document.getElementById("input-buscador");
+    const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
     const btnExportar = document.getElementById("btn-exportar");
     const cuerpoHistorial = document.getElementById("cuerpo-historial");
     
@@ -260,10 +292,24 @@
     let datosGlobales = [];
     let filtradosActuales = [];
 
-    const hoy = new Date();
-    inputCalendario.value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    function obtenerFechaHoyInput() {
+      const hoy = new Date();
+      return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    }
 
-    onValue(ref(db, 'historial'), (snapshot) => {
+    function escaparCsv(valor) {
+      const texto = String(valor ?? "");
+      return `"${texto.replace(/"/g, '""')}"`;
+    }
+
+    inputCalendario.value = obtenerFechaHoyInput();
+
+    const consultaHistorial = query(
+      ref(db, CONFIG.NODO_HISTORIAL),
+      limitToLast(CONFIG.LIMITE_REGISTROS_HISTORIAL)
+    );
+
+    onValue(consultaHistorial, (snapshot) => {
       if (snapshot.exists()) {
         const registros = snapshot.val();
         datosGlobales = Object.values(registros);
@@ -280,14 +326,19 @@
 
     inputCalendario.addEventListener("change", renderizarVista);
     inputBuscador.addEventListener("input", renderizarVista);
+    btnLimpiarFiltros.addEventListener("click", () => {
+      inputCalendario.value = obtenerFechaHoyInput();
+      inputBuscador.value = "";
+      renderizarVista();
+    });
 
     function renderizarVista() {
       const fechaElegida = inputCalendario.value;
       const textoBusqueda = inputBuscador.value.trim().toLowerCase();
+      const esModoBusquedaGlobal = Boolean(textoBusqueda);
 
-      // 1. Filtrar registros válidos (excluyendo recepción y números puros)
       const filtradosCrudos = datosGlobales.filter(item => {
-        if (!item.timestamp) return false;
+        if (!item || !item.timestamp) return false;
 
         const sectorLimpio = (item.sector || "").toLowerCase();
         if (sectorLimpio.includes("recepción") || sectorLimpio.includes("recepcion")) return false;
@@ -295,9 +346,9 @@
         const identificador = (item.identificador || "").trim();
         if (!identificador || /^\d+$/.test(identificador)) return false;
 
-        if (textoBusqueda && !identificador.toLowerCase().includes(textoBusqueda)) return false;
+        if (esModoBusquedaGlobal && !identificador.toLowerCase().includes(textoBusqueda)) return false;
 
-        if (!textoBusqueda && fechaElegida) {
+        if (!esModoBusquedaGlobal && fechaElegida) {
           const d = new Date(item.timestamp);
           const fechaD = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           if (fechaD !== fechaElegida) return false;
@@ -306,17 +357,18 @@
         return true;
       });
 
-      // 2. DEDUPLICACIÓN Y CÁLCULO DE TIEMPOS POR DONANTE
       const mapaDonantes = new Map();
 
       filtradosCrudos.forEach(item => {
         const d = new Date(item.timestamp);
-        const fechaDia = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const fechaDia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const nombreKey = (item.identificador || "").trim().toLowerCase();
         const claveUnica = `${fechaDia}_${nombreKey}`;
+        const esRepeticion = String(item.accion || "").toLowerCase() === "repetir";
 
         if (!mapaDonantes.has(claveUnica)) {
           mapaDonantes.set(claveUnica, {
+            fechaDia,
             nombreOriginal: item.identificador,
             primerTimestamp: item.timestamp,
             ultimoTimestamp: item.timestamp,
@@ -326,12 +378,14 @@
           });
         } else {
           const reg = mapaDonantes.get(claveUnica);
-          if (item.timestamp < reg.primerTimestamp) reg.primerTimestamp = item.timestamp;
-          if (item.timestamp > reg.ultimoTimestamp) {
-            reg.ultimoTimestamp = item.timestamp;
-            reg.ultimoSector = item.sector;
-            reg.consultorio = item.consultorio || reg.consultorio;
-            reg.tipo = item.tipo || reg.tipo;
+          if (!esRepeticion) {
+            if (item.timestamp < reg.primerTimestamp) reg.primerTimestamp = item.timestamp;
+            if (item.timestamp > reg.ultimoTimestamp) {
+              reg.ultimoTimestamp = item.timestamp;
+              reg.ultimoSector = item.sector;
+              reg.consultorio = item.consultorio || reg.consultorio;
+              reg.tipo = item.tipo || reg.tipo;
+            }
           }
         }
       });
@@ -339,7 +393,6 @@
       filtradosActuales = Array.from(mapaDonantes.values());
       filtradosActuales.sort((a, b) => b.ultimoTimestamp - a.ultimoTimestamp);
 
-      // 3. ESTADÍSTICAS AVANZADAS
       let countPlaquetas = 0;
       let sumaMinutos = 0;
       let totalConTiempo = 0;
@@ -350,16 +403,14 @@
       filtradosActuales.forEach(donante => {
         const dUltimo = new Date(donante.ultimoTimestamp);
         const horaStr = dUltimo.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const fechaCorta = dUltimo.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
         
-        // Hora pico (agrupada por hora exacta)
         const horaExacta = `${String(dUltimo.getHours()).padStart(2, '0')}:00 hs`;
         horasConteo[horaExacta] = (horasConteo[horaExacta] || 0) + 1;
 
-        // Tipo de donación
         const tipoLower = donante.tipo.toLowerCase();
         if (tipoLower.includes('plaqueta')) countPlaquetas++;
 
-        // Tiempo en circuito (diferencia entre primer y último llamado en minutos)
         const diffMs = donante.ultimoTimestamp - donante.primerTimestamp;
         const diffMin = Math.round(diffMs / 60000);
         if (diffMin > 0) {
@@ -370,10 +421,14 @@
 
         const badgeSector = donante.ultimoSector || "General";
         const badgeTipo = donante.tipo ? `<span class="badge-tipo">${donante.tipo}</span>` : '';
+        const mostrarFecha = esModoBusquedaGlobal || (fechaElegida && donante.fechaDia !== fechaElegida);
 
         filasHTML += `
           <tr>
-            <td><strong>${horaStr}</strong></td>
+            <td>
+              <strong>${horaStr}</strong>
+              ${mostrarFecha ? `<span class="fecha-sub">${fechaCorta}</span>` : ""}
+            </td>
             <td><span class="badge-sector sector-${badgeSector}">${badgeSector}</span></td>
             <td>${donante.consultorio} ${badgeTipo}</td>
             <td><strong>${donante.nombreOriginal}</strong></td>
@@ -389,11 +444,9 @@
       } else {
         cuerpoHistorial.innerHTML = filasHTML;
         
-        // Promedio de tiempo
         const promedio = totalConTiempo > 0 ? Math.round(sumaMinutos / totalConTiempo) : 0;
         statTiempoPromedio.textContent = `${promedio} min`;
 
-        // Calcular hora pico
         let horaPicoMax = "-";
         let maxVisitas = 0;
         for (const [hora, count] of Object.entries(horasConteo)) {
@@ -409,21 +462,29 @@
       statPlaquetas.textContent = countPlaquetas;
     }
 
-    // Exportar a Excel (CSV)
     btnExportar.addEventListener("click", () => {
       if (filtradosActuales.length === 0) {
         alert("No hay registros para exportar.");
         return;
       }
 
-      let csvContent = "\uFEFFHora Registro;Último Sector;Box/Consultorio;Tipo;Donante;Tiempo en Circuito (min)\n";
+      let csvContent = "\uFEFFFecha;Hora Registro;Último Sector;Box/Consultorio;Tipo;Donante;Tiempo en Circuito (min)\n";
 
       filtradosActuales.forEach(d => {
         const fechaHoraObj = new Date(d.ultimoTimestamp);
+        const fechaStr = fechaHoraObj.toLocaleDateString('es-AR');
         const horaStr = fechaHoraObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
         const diffMin = Math.round((d.ultimoTimestamp - d.primerTimestamp) / 60000);
 
-        csvContent += `"${horaStr}";"${d.ultimoSector}";"${d.consultorio}";"${d.tipo}";"${d.nombreOriginal}";"${diffMin > 0 ? diffMin : 0}"\n`;
+        csvContent += [
+          escaparCsv(fechaStr),
+          escaparCsv(horaStr),
+          escaparCsv(d.ultimoSector),
+          escaparCsv(d.consultorio),
+          escaparCsv(d.tipo),
+          escaparCsv(d.nombreOriginal),
+          escaparCsv(diffMin > 0 ? diffMin : 0)
+        ].join(";") + "\n";
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -434,6 +495,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     });
   </script>
 </body>
