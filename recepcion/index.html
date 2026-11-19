@@ -6,12 +6,14 @@
   <title>Panel Recepción - FU.HE.SA</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 22px; max-width: 420px; margin: auto; background: #f8f9fa; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; }
-    .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
     h2 { color: #1e3a8a; margin: 0; font-size: 1.4rem; }
-    
+
+    .estado-grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .estado-red { font-size: 0.78rem; font-weight: bold; padding: 4px 10px; border-radius: 20px; background: #e2e8f0; color: #475569; }
     .estado-online { background: #dcfce7; color: #166534; }
     .estado-offline { background: #fee2e2; color: #991b1b; }
+    .estado-sheet-err { font-size: 0.72rem; font-weight: bold; padding: 4px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; display: none; }
 
     .ultimo-box {
       background: #e9ecef;
@@ -43,7 +45,6 @@
     #btn-repetir { background: #ffc107; color: #212529; margin-top: 8px; font-size: 0.95rem; }
     #btn-repetir:hover { background: #e0a800; }
 
-    /* Estilo para la sección de Derivación a Entrevista */
     .seccion-derivacion {
       background: #eff6ff;
       border: 2px dashed #93c5fd;
@@ -66,6 +67,28 @@
       font-size: 1rem;
     }
     #btn-derivar:hover:not(:disabled) { background: #059669; }
+
+    .aviso-derivacion {
+      margin-top: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: center;
+      display: none;
+    }
+    .aviso-derivacion.ok {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+      display: block;
+    }
+    .aviso-derivacion.err {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      display: block;
+    }
 
     .atajos-info {
       background: #eef2f6;
@@ -104,7 +127,10 @@
   <div id="panel-contenido" style="display: none;">
     <div class="header-panel">
       <h2>Panel - Recepción</h2>
-      <span id="badge-conexion" class="estado-red">Conectando...</span>
+      <div class="estado-grupo">
+        <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
+        <span id="badge-conexion" class="estado-red">Conectando...</span>
+      </div>
     </div>
 
     <div class="ultimo-box">
@@ -130,7 +156,6 @@
     <button id="btn-llamar">Llamar Donante (Escrito)</button>
     <button id="btn-repetir">📢 Repetir Último Llamado</button>
 
-    <!-- 📋 NUEVO MÓDULO: Derivación a Entrevista -->
     <div class="seccion-derivacion">
       <h3>➡️ Derivar a Entrevista</h3>
       
@@ -146,6 +171,7 @@
       <input type="text" id="derivar-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
 
       <button id="btn-derivar">📤 Enviar a Entrevista</button>
+      <div id="aviso-derivacion" class="aviso-derivacion"></div>
     </div>
 
     <div class="atajos-info">
@@ -153,21 +179,76 @@
     </div>
 
     <hr class="separador">
-    <button id="btn-limpiar">🧹 Limpiar Tele (Inicio de Jornada)</button>
+    <button id="btn-limpiar">🧹 Limpiar Tele y Cola (Inicio de Jornada)</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    const CLAVE_SECRETA = "fuhesa2026"; 
-    const WEBHOOK_URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec";
-    const SECTOR_ACTUAL = "Recepcion";
+    // 🔧 CONFIGURACIÓN CENTRALIZADA
+    const CONFIG = {
+      CLAVE_SECRETA: "fuhesa2026",
+      WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
+      SECTOR_ACTUAL: "Recepcion",
+      NODO_COLA_ENTREVISTA: "cola_entrevista",
+      ANTI_REBOTE_MS: 800,
+      AVISO_DURACION_MS: 2200,
+      STORAGE_KEY_CORRELATIVO: "fuhesa_recepcion_correlativo_v1"
+    };
+
     let numeroUltimoGlobal = 0;
     let bloqueadoPorRebote = false;
+    let timerAvisoDerivacion = null;
+    let colaEntrevistaActual = {};
+    let fallosSheetsSesion = 0;
+
+    function obtenerFechaHoyLocal() {
+      const hoy = new Date();
+      const y = hoy.getFullYear();
+      const m = String(hoy.getMonth() + 1).padStart(2, "0");
+      const d = String(hoy.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
 
     function formatearNumero(num) {
       return String(num % 100).padStart(2, '0');
+    }
+
+    function actualizarTextoProximoNumero() {
+      document.getElementById("prox-num").textContent = formatearNumero(numeroUltimoGlobal + 1);
+    }
+
+    function guardarCorrelativoLocal(num) {
+      try {
+        localStorage.setItem(CONFIG.STORAGE_KEY_CORRELATIVO, JSON.stringify({
+          fecha: obtenerFechaHoyLocal(),
+          ultimo: num
+        }));
+      } catch (err) {
+        console.warn("No se pudo guardar correlativo en localStorage:", err);
+      }
+    }
+
+    function cargarCorrelativoLocal() {
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_CORRELATIVO);
+        if (!raw) return 0;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.fecha === obtenerFechaHoyLocal() && typeof parsed.ultimo === "number") {
+          return parsed.ultimo;
+        }
+        return 0;
+      } catch (err) {
+        return 0;
+      }
+    }
+
+    function normalizarClaveNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
     }
 
     function capitalizarNombre(texto) {
@@ -178,11 +259,32 @@
         .replace(/\b\w/g, letra => letra.toUpperCase());
     }
 
+    function mostrarAvisoDerivacion(mensaje, tipo) {
+      const aviso = document.getElementById("aviso-derivacion");
+      aviso.textContent = mensaje;
+      aviso.className = `aviso-derivacion ${tipo}`;
+      if (timerAvisoDerivacion) clearTimeout(timerAvisoDerivacion);
+      timerAvisoDerivacion = setTimeout(() => {
+        aviso.className = "aviso-derivacion";
+        aviso.textContent = "";
+      }, CONFIG.AVISO_DURACION_MS);
+    }
+
+    function registrarFalloSheet() {
+      fallosSheetsSesion++;
+      const badge = document.getElementById("badge-sheet-err");
+      badge.style.display = "inline-block";
+      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
+    }
+
+    numeroUltimoGlobal = cargarCorrelativoLocal();
+    actualizarTextoProximoNumero();
+
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
 
     function verificarClave() {
-      if (document.getElementById("input-password").value === CLAVE_SECRETA) {
+      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
         document.getElementById("login-overlay").style.display = "none";
         document.getElementById("panel-contenido").style.display = "block";
       } else {
@@ -214,10 +316,13 @@
       }
     });
 
-    onValue(ref(db, `sectores/${SECTOR_ACTUAL}`), (snapshot) => {
+    onValue(ref(db, CONFIG.NODO_COLA_ENTREVISTA), (snapshot) => {
+      colaEntrevistaActual = snapshot.exists() ? snapshot.val() : {};
+    });
+
+    onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
-      const elProx = document.getElementById("prox-num");
 
       if (snapshot.exists()) {
         const datos = snapshot.val();
@@ -228,28 +333,40 @@
         elInfo.textContent = `${datos.consultorio}${hora ? ' • ' + hora + ' hs' : ''}`;
 
         if (!isNaN(datos.identificador)) {
-          numeroUltimoGlobal = parseInt(datos.identificador);
-          elProx.textContent = formatearNumero(numeroUltimoGlobal + 1);
+          const numFirebase = parseInt(datos.identificador, 10);
+          if (numFirebase >= numeroUltimoGlobal) {
+            numeroUltimoGlobal = numFirebase;
+            guardarCorrelativoLocal(numeroUltimoGlobal);
+            actualizarTextoProximoNumero();
+          }
         }
       } else {
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
-        numeroUltimoGlobal = 0;
-        elProx.textContent = formatearNumero(1);
       }
     });
 
     document.getElementById("btn-config-num").addEventListener("click", () => {
       const nuevoVal = prompt("Ingresá el número desde el cual querés continuar (ej: 0 o 15):", numeroUltimoGlobal);
-      if (nuevoVal !== null && !isNaN(nuevoVal)) {
-        numeroUltimoGlobal = parseInt(nuevoVal) - 1;
-        document.getElementById("prox-num").textContent = formatearNumero(numeroUltimoGlobal + 1);
+      if (nuevoVal !== null && !isNaN(nuevoVal) && nuevoVal.trim() !== "") {
+        numeroUltimoGlobal = parseInt(nuevoVal, 10) - 1;
+        if (numeroUltimoGlobal < 0) numeroUltimoGlobal = 0;
+        guardarCorrelativoLocal(numeroUltimoGlobal);
+        actualizarTextoProximoNumero();
       }
     });
 
     function guardarDonanteEnSheets(datos) {
-      if (!WEBHOOK_URL_GOOGLE_SHEETS || WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
-      fetch(WEBHOOK_URL_GOOGLE_SHEETS, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) }).catch(err => console.error(err));
+      if (!CONFIG.WEBHOOK_URL_GOOGLE_SHEETS || CONFIG.WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
+      fetch(CONFIG.WEBHOOK_URL_GOOGLE_SHEETS, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      }).catch((err) => {
+        console.error("Error al guardar en Sheets:", err);
+        registrarFalloSheet();
+      });
     }
 
     function ejecutarLlamado(identificadorTexto) {
@@ -267,19 +384,19 @@
         bloqueadoPorRebote = false;
         btnSig.disabled = false;
         btnLla.disabled = false;
-      }, 800);
+      }, CONFIG.ANTI_REBOTE_MS);
 
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      const datosLlamado = { identificador: i, sector: SECTOR_ACTUAL, consultorio: c, timestamp: Date.now() };
+      const datosLlamado = { identificador: i, sector: CONFIG.SECTOR_ACTUAL, consultorio: c, timestamp: Date.now() };
 
-      set(ref(db, `sectores/${SECTOR_ACTUAL}`), datosLlamado).then(() => {
+      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
         document.getElementById("id").value = "";
       });
 
       push(ref(db, 'historial'), datosLlamado);
-      guardarDonanteEnSheets({ fechaHora: fechaHoraStr, identificador: i, sector: SECTOR_ACTUAL, consultorio: c, observacion: "" });
+      guardarDonanteEnSheets({ fechaHora: fechaHoraStr, identificador: i, sector: CONFIG.SECTOR_ACTUAL, consultorio: c, observacion: "" });
     }
 
     function llamarSiguiente() {
@@ -287,15 +404,17 @@
       if (numeroUltimoGlobal > 99) {
         numeroUltimoGlobal = 0;
       }
+      guardarCorrelativoLocal(numeroUltimoGlobal);
+      actualizarTextoProximoNumero();
       ejecutarLlamado(formatearNumero(numeroUltimoGlobal));
     }
 
     function repetirLlamado() {
-      get(ref(db, `sectores/${SECTOR_ACTUAL}`)).then((snapshot) => {
+      get(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`)).then((snapshot) => {
         if (snapshot.exists()) {
           const datos = snapshot.val();
           datos.timestamp = Date.now();
-          set(ref(db, `sectores/${SECTOR_ACTUAL}`), datos);
+          set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datos);
           push(ref(db, 'historial'), datos);
         } else {
           alert("No hay turnos activos en Recepción para repetir.");
@@ -309,7 +428,9 @@
       const i = document.getElementById("id").value;
       if (!i.trim()) return alert("Por favor escribe el nombre o número del donante.");
       if (!isNaN(i.trim())) {
-        numeroUltimoGlobal = parseInt(i.trim());
+        numeroUltimoGlobal = parseInt(i.trim(), 10);
+        guardarCorrelativoLocal(numeroUltimoGlobal);
+        actualizarTextoProximoNumero();
       }
       ejecutarLlamado(i);
     }
@@ -322,17 +443,32 @@
       }
     });
 
-    // 📋 LÓGICA DE DERIVACIÓN A ENTREVISTA
+    function yaExisteEnColaEntrevista(nombreLimpio) {
+      const claveBuscada = normalizarClaveNombre(nombreLimpio);
+      return Object.values(colaEntrevistaActual).some(
+        item => item && normalizarClaveNombre(item.identificador || "") === claveBuscada
+      );
+    }
+
     function derivarAEntrevista() {
-      const rawNombre = document.getElementById("derivar-nombre").value;
+      const inputDerivar = document.getElementById("derivar-nombre");
+      const rawNombre = inputDerivar.value;
       if (!rawNombre.trim()) {
-        alert("Por favor escribí el nombre y apellido del donante para derivar.");
-        document.getElementById("derivar-nombre").focus();
+        mostrarAvisoDerivacion("⚠️ Escribí el nombre y apellido para derivar.", "err");
+        inputDerivar.focus();
         return;
       }
 
       const nombreLimpio = capitalizarNombre(rawNombre);
       const tipoAtencion = document.getElementById("derivar-tipo").value;
+
+      if (yaExisteEnColaEntrevista(nombreLimpio)) {
+        const confirmarDuplicado = confirm(`"${nombreLimpio}" ya figura en la cola de Entrevista. ¿Derivar de todas formas?`);
+        if (!confirmarDuplicado) {
+          inputDerivar.focus();
+          return;
+        }
+      }
 
       const datosDerivacion = {
         identificador: nombreLimpio,
@@ -340,14 +476,14 @@
         timestamp: Date.now()
       };
 
-      // Guardamos en Firebase dentro de la cola de pendientes para entrevista
-      push(ref(db, 'cola_entrevista'), datosDerivacion).then(() => {
-        document.getElementById("derivar-nombre").value = "";
+      push(ref(db, CONFIG.NODO_COLA_ENTREVISTA), datosDerivacion).then(() => {
+        inputDerivar.value = "";
         document.getElementById("derivar-tipo").value = "Sin Turno";
-        alert(`✅ Donante "${nombreLimpio}" derivado a Entrevista correctamente.`);
+        inputDerivar.focus();
+        mostrarAvisoDerivacion(`✅ "${nombreLimpio}" derivado a Entrevista.`, "ok");
       }).catch(err => {
         console.error("Error al derivar:", err);
-        alert("Hubo un error al derivar el paciente. Verificá tu conexión.");
+        mostrarAvisoDerivacion("❌ Error al derivar. Revisá la conexión.", "err");
       });
     }
 
@@ -379,12 +515,16 @@
     });
 
     document.getElementById("btn-limpiar").addEventListener("click", () => {
-      const confirmar = confirm("¿Limpiar los llamados activos de la Tele para iniciar la jornada? (El historial guardado NO se borrará)");
+      const confirmar = confirm("¿Limpiar los llamados activos de la Tele y la cola pendiente de Entrevista para iniciar la jornada? (El historial guardado NO se borrará)");
       if (confirmar) {
-        remove(ref(db, 'sectores')).then(() => {
+        Promise.all([
+          remove(ref(db, 'sectores')),
+          remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA))
+        ]).then(() => {
           numeroUltimoGlobal = 0;
-          document.getElementById("prox-num").textContent = formatearNumero(1);
-          alert("✅ Pantalla de la Tele limpia y lista.");
+          guardarCorrelativoLocal(0);
+          actualizarTextoProximoNumero();
+          alert("✅ Pantalla de la Tele y cola de Entrevista limpias y listas.");
         }).catch((err) => {
           console.error("Error al limpiar:", err);
         });
