@@ -19,7 +19,6 @@
       position: relative;
     }
     
-    /* Franja decorativa navideña superior sutil */
     body::before {
       content: "";
       position: fixed;
@@ -32,7 +31,6 @@
       box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
     }
 
-    /* Capa contenedora exclusiva para efectos navideños en TV */
     #capa-navidena {
       position: fixed;
       top: 0;
@@ -73,24 +71,50 @@
       border-bottom: 3px solid #334155;
       padding-bottom: 12px;
       z-index: 2;
+      gap: 15px;
     }
-    h1 { margin: 0; font-size: 2.2rem; color: #f8fafc; letter-spacing: 1px; }
-    .subtitulo { color: #94a3b8; font-size: 1.1rem; margin-top: 4px; }
+    h1 { margin: 0; font-size: 2.1rem; color: #f8fafc; letter-spacing: 1px; }
+    .subtitulo { color: #94a3b8; font-size: 1.05rem; margin-top: 4px; }
     .subtitulo::after { content: " 🎄✨"; }
 
     .header-derecha {
       display: flex;
       align-items: center;
-      gap: 15px;
-      margin-right: 140px;
+      gap: 10px;
+      margin-right: 145px;
+      flex-shrink: 0;
+    }
+
+    #badge-clima {
+      background: #1e293b;
+      padding: 6px 14px;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .clima-principal {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fbbf24;
+      letter-spacing: 0.3px;
+    }
+    .clima-detalle {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-top: 2px;
     }
 
     #reloj-digital {
-      font-size: 2rem;
+      font-size: 1.85rem;
       font-weight: 900;
       color: #38bdf8;
       background: #1e293b;
-      padding: 8px 20px;
+      padding: 8px 18px;
       border-radius: 12px;
       border: 2px solid #334155;
       letter-spacing: 1px;
@@ -254,7 +278,6 @@
       font-weight: 600;
     }
 
-    /* Copos de nieve de texto nítido 100% compatible con Smart TV */
     .copo {
       position: absolute;
       top: -20px;
@@ -270,7 +293,6 @@
       100% { transform: translateY(105vh) translateX(20px); }
     }
 
-    /* Destellos dorados parpadeantes */
     .destello {
       position: absolute;
       background: radial-gradient(circle, rgba(245, 158, 11, 0.9) 0%, transparent 70%);
@@ -283,7 +305,6 @@
       50% { opacity: 0.9; transform: scale(1.4); }
     }
 
-    /* Pie de página navideño */
     .footer-navideno {
       position: absolute;
       bottom: 15px;
@@ -315,7 +336,6 @@
 </head>
 <body>
 
-  <!-- Capa fija exclusiva para la TV -->
   <div id="capa-navidena"></div>
 
   <button id="btn-fullscreen">📺 Pantalla Completa</button>
@@ -326,6 +346,10 @@
       <div class="subtitulo">Sala de Espera - Turnos y Llamados</div>
     </div>
     <div class="header-derecha">
+      <div id="badge-clima" title="Temperatura, térmica y máxima/mínima del día">
+        <span class="clima-principal" id="clima-temp">🌡️ --°C</span>
+        <span class="clima-detalle" id="clima-ext">ST --° • Máx --° / Mín --°</span>
+      </div>
       <span id="badge-conexion" class="estado-red">● Conectando...</span>
       <div id="reloj-digital">00:00:00</div>
     </div>
@@ -360,7 +384,6 @@
     </div>
   </div>
 
-  <!-- Pie de página navideño -->
   <div class="footer-navideno" id="texto-rotativo">
     🎄 Gracias por regalar vida en estas fiestas • FU.HE.SA 🎁
   </div>
@@ -368,6 +391,12 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const CLIMA_CONFIG = {
+      LATITUD: -34.615,
+      LONGITUD: -58.625,
+      INTERVALO_MS: 15 * 60 * 1000
+    };
 
     const firebaseConfig = {
       apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
@@ -382,6 +411,68 @@
     const db = getDatabase(app);
 
     let audioCtx = null;
+
+    function iconoClima(codigoWmo) {
+      if (codigoWmo === 0) return "☀️";
+      if ([1, 2].includes(codigoWmo)) return "🌤️";
+      if (codigoWmo === 3) return "☁️";
+      if ([45, 48].includes(codigoWmo)) return "🌫️";
+      if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(codigoWmo)) return "🌧️";
+      if ([95, 96, 99].includes(codigoWmo)) return "⛈️";
+      return "🌡️";
+    }
+
+    function redondearDecima(valor) {
+      return Math.round(valor * 10) / 10;
+    }
+
+    function redondearEntero(valor) {
+      return Math.round(valor);
+    }
+
+    async function actualizarTemperatura() {
+      const elTemp = document.getElementById("clima-temp");
+      const elExt = document.getElementById("clima-ext");
+      if (!elTemp || !elExt) return;
+
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${CLIMA_CONFIG.LATITUD}&longitude=${CLIMA_CONFIG.LONGITUD}&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error("Respuesta clima no OK");
+
+        const data = await resp.json();
+        const temp = data?.current?.temperature_2m;
+        const termica = data?.current?.apparent_temperature;
+        const code = data?.current?.weather_code;
+        const maxHoy = data?.daily?.temperature_2m_max?.[0];
+        const minHoy = data?.daily?.temperature_2m_min?.[0];
+
+        if (typeof temp === "number") {
+          elTemp.textContent = `${iconoClima(code)} ${redondearDecima(temp)}°C`;
+        }
+
+        const partesExtra = [];
+        if (typeof termica === "number") {
+          partesExtra.push(`ST ${redondearDecima(termica)}°`);
+        }
+        if (typeof maxHoy === "number" && typeof minHoy === "number") {
+          partesExtra.push(`Máx ${redondearEntero(maxHoy)}° / Mín ${redondearEntero(minHoy)}°`);
+        } else if (typeof maxHoy === "number") {
+          partesExtra.push(`Máx ${redondearEntero(maxHoy)}°`);
+        } else if (typeof minHoy === "number") {
+          partesExtra.push(`Mín ${redondearEntero(minHoy)}°`);
+        }
+
+        if (partesExtra.length > 0) {
+          elExt.textContent = partesExtra.join(" • ");
+        }
+      } catch (err) {
+        console.warn("No se pudo actualizar el clima:", err);
+      }
+    }
+
+    actualizarTemperatura();
+    setInterval(actualizarTemperatura, CLIMA_CONFIG.INTERVALO_MS);
 
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
@@ -553,7 +644,6 @@
       }
     }
 
-    // Generador de copos de nieve con texto nítido ❄
     function crearNieve() {
       const capa = document.getElementById('capa-navidena');
       const cantidadCopos = 20;
@@ -576,7 +666,6 @@
     }
     crearNieve();
 
-    // Generador de destellos luminosos
     function crearDestellos() {
       const capa = document.getElementById('capa-navidena');
       const cantidadDestellos = 12;
@@ -599,7 +688,6 @@
     }
     crearDestellos();
 
-    // Rotador de mensajes navideños en el pie de página
     const mensajesNavidenos = [
       "🎄 Gracias por regalar vida en estas fiestas • FU.HE.SA",
       "🎅 Recordá mantenerte hidratado antes y después de tu donación 💧",
