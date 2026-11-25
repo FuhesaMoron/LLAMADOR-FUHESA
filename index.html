@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
   <title>Sala de Espera - FU.HE.SA</title>
   <style>
     body {
@@ -203,7 +205,6 @@
       line-height: 1.15;
     }
 
-    /* Ajuste automático cuando Extracción llama en tanda */
     .turno-actual.es-tanda {
       font-size: 1.95rem;
       line-height: 1.25;
@@ -397,7 +398,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const CLIMA_CONFIG = {
       LATITUD: -34.615,
@@ -577,7 +578,9 @@
     });
 
     const contenedorRecientes = document.getElementById("contenedor-recientes");
-    onValue(ref(db, 'historial'), (snapshot) => {
+    const consultaRecientes = query(ref(db, 'historial'), limitToLast(20));
+
+    onValue(consultaRecientes, (snapshot) => {
       if (snapshot.exists()) {
         const registros = snapshot.val();
         const lista = Object.values(registros).sort((a, b) => b.timestamp - a.timestamp);
