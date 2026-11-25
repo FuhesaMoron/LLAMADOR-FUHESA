@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Entrevista - FU.HE.SA</title>
+  <title>Panel Recepción - Fu.He.Sa</title>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -27,202 +27,29 @@
       margin-bottom: 15px;
       gap: 8px;
     }
-    h2 { color: #1e3a8a; margin: 0; font-size: 1.6rem; font-weight: 800; }
+    h2 { color: #0f766e; margin: 0; font-size: 1.6rem; font-weight: 800; }
 
-    .estado-grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .estado-red { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; background: #e2e8f0; color: #475569; }
     .estado-online { background: #dcfce7; color: #166534; }
     .estado-offline { background: #fee2e2; color: #991b1b; }
-    .estado-sheet-err { font-size: 0.75rem; font-weight: bold; padding: 4px 9px; border-radius: 20px; background: #fef3c7; color: #92400e; display: none; }
-    
+
     .ultimo-box {
-      background: #e2e8f0;
-      border-left: 6px solid #1e3a8a;
+      background: #f0fdfa;
+      border-left: 6px solid #0f766e;
       padding: 14px;
       border-radius: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
       text-align: center;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
     }
-    .ultimo-box:active { transform: scale(0.98); background: #cbd5e1; }
-    .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #4a5568; font-weight: 800; letter-spacing: 0.5px; }
+    .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #115e59; font-weight: 800; }
     .ultimo-valor { font-size: 1.8rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
-    .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
-
-    /* Bloque de resolución post-entrevista (Apto -> Extracción / No Apto) */
-    .bloque-resolucion {
-      background: #eff6ff;
-      border: 2px solid #93c5fd;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 18px;
-      display: none;
-    }
-    .resolucion-titulo {
-      font-size: 0.82rem;
-      font-weight: 800;
-      color: #1e40af;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-    .resolucion-botones {
-      display: grid;
-      grid-template-columns: 1.6fr 1fr;
-      gap: 8px;
-    }
-    .btn-apto {
-      background: #16a34a;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 11px 10px;
-      font-size: 0.95rem;
-      font-weight: 900;
-      cursor: pointer;
-    }
-    .btn-apto:hover { background: #15803d; }
-    .btn-no-apto {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-      border-radius: 10px;
-      padding: 11px 8px;
-      font-size: 0.9rem;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .btn-no-apto:hover { background: #fecaca; }
-    .aviso-resolucion {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      text-align: center;
-      color: #166534;
-      display: none;
-    }
-
-    .bandeja-pendientes {
-      background: #f0fdf4;
-      border: 2px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 20px;
-    }
-    .bandeja-titulo {
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: #166534;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-    .lista-pendientes {
-      max-height: 190px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .item-pendiente {
-      background: white;
-      border: 1px solid #d1d5db;
-      padding: 8px 10px;
-      border-radius: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.15s;
-    }
-    .item-pendiente.prio-plaquetas { border-left: 5px solid #e11d48; }
-    .item-pendiente.prio-club { border-left: 5px solid #d97706; }
-    .item-pendiente.prio-turno { border-left: 5px solid #2563eb; }
-    .item-pendiente:hover {
-      background: #f8fafc;
-      border-color: #94a3b8;
-    }
-    .item-pendiente.seleccionado {
-      background: #dcfce7;
-      border: 2px solid #16a34a;
-    }
-    .item-seleccionar-zona {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex: 1;
-      gap: 8px;
-      cursor: pointer;
-      min-width: 0;
-    }
-    .item-pendiente-nombre {
-      font-weight: 800;
-      color: #111827;
-      font-size: 1.02rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .item-meta {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-shrink: 0;
-    }
-    .hora-derivacion {
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: #475569;
-      background: #f1f5f9;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-    .badge-tipo {
-      font-size: 0.74rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-weight: 700;
-      background: #e2e8f0;
-      color: #334155;
-      white-space: nowrap;
-    }
-    .badge-tipo.club { background: #fef3c7; color: #b45309; }
-    .badge-tipo.plaquetas { background: #ffe4e6; color: #be123c; }
-    .badge-tipo.turno { background: #dbeafe; color: #1d4ed8; }
-    .badge-listo {
-      font-size: 0.72rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-weight: 800;
-      background: #16a34a;
-      color: white;
-      white-space: nowrap;
-    }
-    .btn-quitar-pendiente {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fca5a5;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 0.85rem;
-      font-weight: 900;
-      cursor: pointer;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-    .btn-quitar-pendiente:hover {
-      background: #fecaca;
-    }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
-    .campo-grupo { margin-bottom: 18px; }
+    .campo-grupo { margin-bottom: 16px; }
 
-    select, input { 
+    select, input[type="text"], input[type="password"] { 
       width: 100%; 
       padding: 14px; 
       font-size: 1.2rem; 
@@ -230,124 +57,77 @@
       border: 2px solid #cbd5e1; 
       border-radius: 10px; 
       background: #fff;
-      color: #1a202c;
       font-weight: 600;
     }
-    select:focus, input:focus {
-      border-color: #007bff;
-      outline: none;
-      background: #fffdf0;
-    }
-    
+
     .btn-principal { 
       width: 100%; 
       padding: 18px; 
       border: none; 
-      font-size: 1.3rem; 
+      font-size: 1.25rem; 
       border-radius: 12px; 
       cursor: pointer; 
       font-weight: 900; 
-      transition: background 0.2s, transform 0.1s;
       margin-top: 5px;
     }
-    .btn-principal:active:not(:disabled) { transform: scale(0.98); }
-    .btn-principal:disabled { opacity: 0.7; cursor: not-allowed; }
+    #btn-llamar { background: #0f766e; color: white; }
+    #btn-llamar:hover { background: #115e59; }
+    #btn-repetir { background: #ffc107; color: #212529; margin-top: 10px; }
 
-    #btn-llamar { 
-      background: #007bff; 
-      color: white; 
-      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    .btn-jornada {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
     }
-    #btn-llamar:hover:not(:disabled) { background: #0056b3; }
-
-    #btn-repetir { 
-      background: #ffc107; 
-      color: #212529; 
-      box-shadow: 0 4px 12px rgba(255,193,7,0.3);
-      margin-top: 12px;
-    }
-    #btn-repetir:hover { background: #e0a800; }
-
-    #error-aviso {
-      color: #c53030;
-      background: #fff5f5;
-      border: 1px solid #feb2b2;
-      padding: 10px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 0.95rem;
-      text-align: center;
-      margin-bottom: 12px;
-      display: none;
-    }
+    .btn-jornada:hover { background: #e2e8f0; color: #1e293b; }
 
     #login-overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: #edf2f7; display: flex; justify-content: center; align-items: center; z-index: 999; 
       padding: 20px; box-sizing: border-box;
     }
-    .login-box { 
-      background: white; padding: 35px; border-radius: 16px; 
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; 
-    }
+    .login-box { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; }
     .login-box input { margin-top: 15px; margin-bottom: 20px; text-align: center; }
-    .login-box button { background: #28a745; color: white; width: 100%; padding: 14px; font-size: 1.2rem; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
-    .error-msg { color: #dc3545; font-size: 1rem; margin-top: 10px; font-weight: bold; display: none; }
+    .login-box button { background: #0f766e; color: white; width: 100%; padding: 14px; font-size: 1.2rem; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
   <div id="login-overlay">
     <div class="login-box">
-      <h2>Acceso Entrevista</h2>
+      <h2>Acceso Recepción</h2>
       <p style="font-size: 1rem; color: #4a5568;">Ingresá la clave del sector:</p>
       <input type="password" id="input-password" placeholder="Contraseña">
       <button id="btn-login">Entrar</button>
-      <div id="error-password" class="error-msg">Contraseña incorrecta</div>
     </div>
   </div>
 
   <div id="panel-contenido" style="display: none;">
     <div class="container">
       <div class="header-panel">
-        <h2>Panel - Entrevista</h2>
-        <div class="estado-grupo">
-          <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
-          <span id="badge-conexion" class="estado-red">Conectando...</span>
-        </div>
+        <h2>Panel - Recepción</h2>
+        <span id="badge-conexion" class="estado-red">Conectando...</span>
       </div>
 
-      <div class="bandeja-pendientes" id="contenedor-bandeja" style="display: none;">
-        <div class="bandeja-titulo">
-          <span>📋 Espera Entrevista (Por Prioridad)</span>
-          <span id="contador-pendientes" style="background: #166534; color: white; padding: 1px 8px; border-radius: 10px; font-size: 0.8rem;">0</span>
-        </div>
-        <div class="lista-pendientes" id="lista-pendientes-html"></div>
-      </div>
-
-      <div class="ultimo-box" id="box-repetir-tactil" title="Tocá aquí para repetir">
-        <div class="ultimo-titulo">Último llamado en Entrevista</div>
+      <div class="ultimo-box" id="box-repetir-tactil" title="Tocá para repetir">
+        <div class="ultimo-titulo">Último llamado en Recepción</div>
         <div class="ultimo-valor" id="ultimo-donante">-</div>
         <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
-        <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
       </div>
 
-      <div class="bloque-resolucion" id="bloque-resolucion">
-        <div class="resolucion-titulo" id="resolucion-nombre">Resultado de Entrevista</div>
-        <div class="resolucion-botones">
-          <button type="button" class="btn-apto" id="btn-pasar-extraccion">✅ Apto → Extracción</button>
-          <button type="button" class="btn-no-apto" id="btn-no-apto">❌ No Apto</button>
-        </div>
-        <div class="aviso-resolucion" id="aviso-resolucion"></div>
-      </div>
-      
       <div class="campo-grupo">
-        <label>Consultorio:</label>
+        <label>Puesto / Sector:</label>
         <select id="cons">
-          <option value="Consultorio 1">Consultorio 1</option>
-          <option value="Consultorio 2">Consultorio 2</option>
-          <option value="Consultorio 3">Consultorio 3</option>
-          <option value="Consultorio 4">Consultorio 4</option>
+          <option value="Recepción">Recepción</option>
+          <option value="Mostrador 1">Mostrador 1</option>
+          <option value="Mostrador 2">Mostrador 2</option>
         </select>
       </div>
 
@@ -366,88 +146,27 @@
         <input type="text" id="id" placeholder="Ej: Juan Pérez" autocomplete="off" autocapitalize="words">
       </div>
 
-      <div id="error-aviso">⚠️ Por favor, escribí el nombre y apellido del donante.</div>
-      
-      <button id="btn-llamar" class="btn-principal">📢 LLAMAR DONANTE</button>
+      <button id="btn-llamar" class="btn-principal">📢 LLAMAR Y PASAR A ENTREVISTA</button>
       <button id="btn-repetir" class="btn-principal">🔄 REPETIR ÚLTIMO LLAMADO</button>
+
+      <button type="button" id="btn-nueva-jornada" class="btn-jornada">🧹 Limpiar Sectores y Colas (Inicio de Jornada)</button>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const CONFIG = {
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
-      SECTOR_ACTUAL: "Entrevista",
+      SECTOR_ACTUAL: "Recepcion",
+      NODO_SECTORES: "sectores",
+      NODO_HISTORIAL: "historial",
       NODO_COLA_ENTREVISTA: "cola_entrevista",
       NODO_COLA_EXTRACCION: "cola_extraccion",
-      ANTI_REBOTE_MS: 900,
-      STORAGE_KEY_CONSULTORIO: "fuhesa_entrevista_cons",
-      PRIORIDAD_TIPO: {
-        "Plaquetas": 1,
-        "Club de Donantes": 2,
-        "Turno": 3,
-        "Sin Turno": 4
-      }
+      SECTORES_A_LIMPIAR: ["Recepcion", "Entrevista", "Extraccion"]
     };
-
-    const selectConsultorio = document.getElementById("cons");
-    const inputNombre = document.getElementById("id");
-    const selectTipoAtencion = document.getElementById("tipo-atencion");
-    const errorAviso = document.getElementById("error-aviso");
-
-    let bloqueadoPorRebote = false;
-    let ultimoLlamadoLocal = null;
-    let idPendienteActualFirebaseKey = null;
-    let fallosSheetsSesion = 0;
-
-    const consultorioGuardado = localStorage.getItem(CONFIG.STORAGE_KEY_CONSULTORIO);
-    if (consultorioGuardado) {
-      selectConsultorio.value = consultorioGuardado;
-    }
-    selectConsultorio.addEventListener("change", () => {
-      localStorage.setItem(CONFIG.STORAGE_KEY_CONSULTORIO, selectConsultorio.value);
-    });
-
-    function obtenerPesoPrioridad(tipo) {
-      return CONFIG.PRIORIDAD_TIPO[tipo] || 99;
-    }
-
-    function capitalizarNombre(texto) {
-      return texto
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, letra => letra.toUpperCase());
-    }
-
-    function formatearHoraCorta(timestamp) {
-      if (!timestamp) return "";
-      return new Date(timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function registrarFalloSheet() {
-      fallosSheetsSesion++;
-      const badge = document.getElementById("badge-sheet-err");
-      badge.style.display = "inline-block";
-      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
-    }
-
-    document.getElementById("btn-login").addEventListener("click", verificarClave);
-    document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
-
-    function verificarClave() {
-      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
-        document.getElementById("login-overlay").style.display = "none";
-        document.getElementById("panel-contenido").style.display = "block";
-        inputNombre.focus();
-      } else {
-        document.getElementById("error-password").style.display = "block";
-        document.getElementById("input-password").value = "";
-      }
-    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
@@ -461,6 +180,32 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    const inputNombre = document.getElementById("id");
+    const selectCons = document.getElementById("cons");
+    const selectTipo = document.getElementById("tipo-atencion");
+    let ultimoRecepcion = null;
+
+    function capitalizarNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, letra => letra.toUpperCase());
+    }
+
+    document.getElementById("btn-login").addEventListener("click", verificarClave);
+    document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
+
+    function verificarClave() {
+      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
+        document.getElementById("login-overlay").style.display = "none";
+        document.getElementById("panel-contenido").style.display = "block";
+        inputNombre.focus();
+      } else {
+        alert("Contraseña incorrecta");
+      }
+    }
+
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -472,314 +217,99 @@
       }
     });
 
-    onValue(ref(db, CONFIG.NODO_COLA_ENTREVISTA), (snapshot) => {
-      const contenedorBandeja = document.getElementById("contenedor-bandeja");
-      const listaHtml = document.getElementById("lista-pendientes-html");
-      const contador = document.getElementById("contador-pendientes");
-
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        const items = Object.entries(data).sort((a, b) => {
-          const prioA = obtenerPesoPrioridad(a[1].tipo);
-          const prioB = obtenerPesoPrioridad(b[1].tipo);
-          if (prioA !== prioB) return prioA - prioB;
-          return (a[1].timestamp || 0) - (b[1].timestamp || 0);
-        });
-
-        if (idPendienteActualFirebaseKey && !data[idPendienteActualFirebaseKey]) {
-          idPendienteActualFirebaseKey = null;
-        }
-        
-        contador.textContent = items.length;
-        contenedorBandeja.style.display = "block";
-        
-        let html = "";
-        items.forEach(([firebaseKey, paciente]) => {
-          let claseBadge = "";
-          let claseCardPrio = "";
-          if (paciente.tipo === "Club de Donantes") { claseBadge = "club"; claseCardPrio = "prio-club"; }
-          if (paciente.tipo === "Plaquetas") { claseBadge = "plaquetas"; claseCardPrio = "prio-plaquetas"; }
-          if (paciente.tipo === "Turno") { claseBadge = "turno"; claseCardPrio = "prio-turno"; }
-
-          const horaTexto = formatearHoraCorta(paciente.timestamp);
-          const estaSeleccionado = firebaseKey === idPendienteActualFirebaseKey;
-          const claseSeleccionado = estaSeleccionado ? "seleccionado" : "";
-          const etiquetaListo = estaSeleccionado ? `<span class="badge-listo">Listo</span>` : "";
-
-          html += `
-            <div class="item-pendiente ${claseCardPrio} ${claseSeleccionado}" data-key="${firebaseKey}" data-nombre="${paciente.identificador}" data-tipo="${paciente.tipo}">
-              <div class="item-seleccionar-zona">
-                <span class="item-pendiente-nombre">👤 ${paciente.identificador}</span>
-                <div class="item-meta">
-                  ${horaTexto ? `<span class="hora-derivacion">${horaTexto}</span>` : ""}
-                  ${etiquetaListo}
-                  <span class="badge-tipo ${claseBadge}">${paciente.tipo}</span>
-                </div>
-              </div>
-              <button type="button" class="btn-quitar-pendiente" data-quitar-key="${firebaseKey}" data-quitar-nombre="${paciente.identificador}" title="Quitar de la lista">✕</button>
-            </div>
-          `;
-        });
-        listaHtml.innerHTML = html;
-
-        document.querySelectorAll(".item-seleccionar-zona").forEach(zona => {
-          zona.addEventListener("click", () => {
-            const card = zona.closest(".item-pendiente");
-            idPendienteActualFirebaseKey = card.getAttribute("data-key");
-            inputNombre.value = card.getAttribute("data-nombre");
-            selectTipoAtencion.value = card.getAttribute("data-tipo");
-            if (errorAviso.style.display === "block") {
-              errorAviso.style.display = "none";
-            }
-            inputNombre.focus();
-            renderizarEstadoSeleccion();
-          });
-        });
-
-        document.querySelectorAll(".btn-quitar-pendiente").forEach(btn => {
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const keyQuitar = btn.getAttribute("data-quitar-key");
-            const nombreQuitar = btn.getAttribute("data-quitar-nombre");
-            if (confirm(`¿Quitar a "${nombreQuitar}" de la lista de pendientes sin llamar?`)) {
-              if (idPendienteActualFirebaseKey === keyQuitar) {
-                idPendienteActualFirebaseKey = null;
-              }
-              remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${keyQuitar}`)).catch(err => console.error(err));
-            }
-          });
-        });
-
-      } else {
-        idPendienteActualFirebaseKey = null;
-        contenedorBandeja.style.display = "none";
-        listaHtml.innerHTML = "";
-      }
-    });
-
-    function renderizarEstadoSeleccion() {
-      document.querySelectorAll(".item-pendiente").forEach(card => {
-        const key = card.getAttribute("data-key");
-        const meta = card.querySelector(".item-meta");
-        const badgeListoExistente = meta.querySelector(".badge-listo");
-        if (key === idPendienteActualFirebaseKey) {
-          card.classList.add("seleccionado");
-          if (!badgeListoExistente) {
-            const span = document.createElement("span");
-            span.className = "badge-listo";
-            span.textContent = "Listo";
-            const badgeTipo = meta.querySelector(".badge-tipo");
-            meta.insertBefore(span, badgeTipo);
-          }
-        } else {
-          card.classList.remove("seleccionado");
-          if (badgeListoExistente) {
-            badgeListoExistente.remove();
-          }
-        }
-      });
-    }
-
-    onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
+    onValue(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
-      const bloqueRes = document.getElementById("bloque-resolucion");
-      const tituloRes = document.getElementById("resolucion-nombre");
-
       if (snapshot.exists()) {
-        const datos = snapshot.val();
-        ultimoLlamadoLocal = datos;
-        const hora = formatearHoraCorta(datos.timestamp);
-        const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : '';
-        elDonante.textContent = datos.identificador;
-        elInfo.textContent = `${datos.consultorio}${etiquetaTipo}${hora ? ' • ' + hora + ' hs' : ''}`;
-
-        if (datos.identificador) {
-          bloqueRes.style.display = "block";
-          tituloRes.textContent = `¿Resultado para ${datos.identificador}?`;
-        } else {
-          bloqueRes.style.display = "none";
-        }
+        const d = snapshot.val();
+        ultimoRecepcion = d;
+        elDonante.textContent = d.identificador || "-";
+        elInfo.textContent = d.identificador ? `${d.consultorio || "Recepción"}${d.tipo ? " • " + d.tipo : ""}` : "Sin llamados activos";
       } else {
+        ultimoRecepcion = null;
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
-        bloqueRes.style.display = "none";
       }
     });
 
-    function guardarDonanteEnSheets(datos) {
+    function guardarSheets(datos) {
       if (!CONFIG.WEBHOOK_URL_GOOGLE_SHEETS || CONFIG.WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
       fetch(CONFIG.WEBHOOK_URL_GOOGLE_SHEETS, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos)
-      }).catch((err) => {
-        console.error("Error al guardar en Sheets:", err);
-        registrarFalloSheet();
-      });
+      }).catch(err => console.error(err));
     }
 
-    function mostrarAvisoResolucion(texto, color) {
-      const aviso = document.getElementById("aviso-resolucion");
-      aviso.textContent = texto;
-      aviso.style.color = color;
-      aviso.style.display = "block";
-      setTimeout(() => {
-        aviso.style.display = "none";
-      }, 2500);
-    }
+    function llamarDonante() {
+      const raw = inputNombre.value.trim();
+      if (!raw) return alert("Escribí el nombre y apellido del donante.");
 
-    document.getElementById("btn-pasar-extraccion").addEventListener("click", () => {
-      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
-
-      const datosExtraccion = {
-        identificador: ultimoLlamadoLocal.identificador,
-        tipo: ultimoLlamadoLocal.tipo || "Sin Turno",
-        origenConsultorio: ultimoLlamadoLocal.consultorio || "",
-        timestamp: Date.now()
-      };
-
-      push(ref(db, CONFIG.NODO_COLA_EXTRACCION), datosExtraccion).then(() => {
-        mostrarAvisoResolucion(`✅ ${datosExtraccion.identificador} enviado a Extracción.`, "#166534");
-      }).catch(err => {
-        console.error("Error al enviar a Extracción:", err);
-      });
-    });
-
-    document.getElementById("btn-no-apto").addEventListener("click", () => {
-      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
-      const ahora = new Date();
-      const timestampAhora = Date.now();
-      const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-      push(ref(db, 'historial'), {
-        identificador: ultimoLlamadoLocal.identificador,
-        sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: ultimoLlamadoLocal.consultorio || "",
-        tipo: ultimoLlamadoLocal.tipo || "",
-        accion: "no_apto",
-        estado: "No Apto",
-        timestamp: timestampAhora
-      }).catch(err => console.error("Error al guardar No Apto en historial:", err));
-
-      guardarDonanteEnSheets({
-        fechaHora: fechaHoraStr,
-        identificador: ultimoLlamadoLocal.identificador,
-        sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: `${ultimoLlamadoLocal.consultorio} (${ultimoLlamadoLocal.tipo || ""})`,
-        observacion: "No Apto / Diferido en Entrevista"
-      });
-
-      mostrarAvisoResolucion(`Registrado como No Apto (${ultimoLlamadoLocal.identificador}).`, "#991b1b");
-    });
-
-    function ejecutarLlamado() {
-      if (bloqueadoPorRebote) return;
-
-      const c = selectConsultorio.value;
-      const tipo = selectTipoAtencion.value;
-      const rawNombre = inputNombre.value.trim();
-      
-      if (!rawNombre) {
-        errorAviso.style.display = "block";
-        inputNombre.focus();
-        return;
-      }
-      errorAviso.style.display = "none";
-
-      const i = capitalizarNombre(rawNombre);
-
-      bloqueadoPorRebote = true;
-      const btnLlamar = document.getElementById("btn-llamar");
-      btnLlamar.disabled = true;
-      btnLlamar.style.background = "#0284c7";
-      btnLlamar.textContent = "⏳ Llamando...";
-
-      setTimeout(() => {
-        bloqueadoPorRebote = false;
-        btnLlamar.disabled = false;
-        btnLlamar.style.background = "#007bff";
-        btnLlamar.textContent = "📢 LLAMAR DONANTE";
-      }, CONFIG.ANTI_REBOTE_MS);
-
+      const nombre = capitalizarNombre(raw);
+      const cons = selectCons.value;
+      const tipo = selectTipo.value;
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const ts = Date.now();
 
-      const datosLlamado = { 
-        identificador: i, 
-        sector: CONFIG.SECTOR_ACTUAL, 
-        consultorio: c, 
+      const datosLlamado = {
+        identificador: nombre,
+        sector: CONFIG.SECTOR_ACTUAL,
+        consultorio: cons,
         tipo: tipo,
         accion: "llamado",
-        timestamp: Date.now() 
+        timestamp: ts
       };
 
-      ultimoLlamadoLocal = datosLlamado;
-
-      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
-        inputNombre.value = "";
-        selectTipoAtencion.value = "Sin Turno";
-        inputNombre.focus();
+      ultimoRecepcion = datosLlamado;
+      set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosLlamado);
+      push(ref(db, CONFIG.NODO_COLA_ENTREVISTA), {
+        identificador: nombre,
+        tipo: tipo,
+        timestamp: ts
+      });
+      push(ref(db, CONFIG.NODO_HISTORIAL), datosLlamado);
+      guardarSheets({
+        fechaHora: fechaHoraStr,
+        identificador: nombre,
+        sector: CONFIG.SECTOR_ACTUAL,
+        consultorio: `${cons} (${tipo})`,
+        observacion: ""
       });
 
-      if (idPendienteActualFirebaseKey) {
-        remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${idPendienteActualFirebaseKey}`)).catch(err => console.error(err));
-        idPendienteActualFirebaseKey = null;
-      }
-
-      push(ref(db, 'historial'), datosLlamado);
-      guardarDonanteEnSheets({ 
-        fechaHora: fechaHoraStr, 
-        identificador: i, 
-        sector: CONFIG.SECTOR_ACTUAL, 
-        consultorio: `${c} (${tipo})`, 
-        observacion: "" 
-      });
+      inputNombre.value = "";
+      selectTipo.value = "Sin Turno";
+      inputNombre.focus();
     }
+
+    document.getElementById("btn-llamar").addEventListener("click", llamarDonante);
+    inputNombre.addEventListener("keypress", (e) => { if (e.key === 'Enter') llamarDonante(); });
 
     function repetirLlamado() {
-      if (ultimoLlamadoLocal) {
-        const datosRepetir = { ...ultimoLlamadoLocal, accion: "repetir", timestamp: Date.now() };
-        set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosRepetir);
-        push(ref(db, 'historial'), datosRepetir);
-        animarFeedbackRepetir();
-        return;
-      }
-
-      get(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          const datos = snapshot.val();
-          datos.accion = "repetir";
-          datos.timestamp = Date.now();
-          set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datos);
-          push(ref(db, 'historial'), datos);
-          animarFeedbackRepetir();
-        } else {
-          alert("No hay turnos activos en Entrevista para repetir.");
-        }
+      if (!ultimoRecepcion || !ultimoRecepcion.identificador) return;
+      set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), {
+        ...ultimoRecepcion,
+        accion: "repetir",
+        timestamp: Date.now()
       });
     }
 
-    function animarFeedbackRepetir() {
-      const box = document.getElementById("box-repetir-tactil");
-      box.style.background = "#d4edda";
-      setTimeout(() => { box.style.background = "#e2e8f0"; }, 400);
-    }
-
-    document.getElementById("btn-llamar").addEventListener("click", ejecutarLlamado);
     document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
     document.getElementById("box-repetir-tactil").addEventListener("click", repetirLlamado);
 
-    inputNombre.addEventListener("keypress", (e) => {
-      if (e.key === 'Enter') {
-        ejecutarLlamado();
-      }
-    });
+    document.getElementById("btn-nueva-jornada").addEventListener("click", async () => {
+      if (!confirm("¿Limpiar los turnos activos de todos los sectores y vaciar las colas de Entrevista y Extracción para iniciar la jornada?")) return;
 
-    inputNombre.addEventListener("input", () => {
-      if (errorAviso.style.display === "block") {
-        errorAviso.style.display = "none";
+      try {
+        const promesas = CONFIG.SECTORES_A_LIMPIAR.map(sec => remove(ref(db, `${CONFIG.NODO_SECTORES}/${sec}`)));
+        promesas.push(remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA)));
+        promesas.push(remove(ref(db, CONFIG.NODO_COLA_EXTRACCION)));
+        await Promise.all(promesas);
+        alert("✅ Sectores y colas limpiados. Jornada lista para arrancar.");
+      } catch (err) {
+        console.error(err);
+        alert("Hubo un problema al limpiar los datos. Revisá la conexión.");
       }
     });
   </script>
