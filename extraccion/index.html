@@ -63,6 +63,18 @@
       align-items: center;
       text-transform: uppercase;
     }
+    .aviso-tope-tanda {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: center;
+      margin-top: 8px;
+      display: none;
+    }
     .lista-aptos {
       max-height: 210px;
       overflow-y: auto;
@@ -189,10 +201,11 @@
 
       <div class="bandeja-aptos" id="contenedor-bandeja" style="display: none;">
         <div class="bandeja-titulo">
-          <span>🩸 Aptos desde Entrevista (Tildá para Tanda)</span>
+          <span>🩸 Aptos desde Entrevista (Máx. 4 por Tanda)</span>
           <span id="contador-aptos" style="background: #991b1b; color: white; padding: 1px 8px; border-radius: 10px; font-size: 0.8rem;">0</span>
         </div>
         <div class="lista-aptos" id="lista-aptos-html"></div>
+        <div class="aviso-tope-tanda" id="aviso-tope-tanda">⚠️ Máximo 4 personas por tanda para que se lea bien en la TV.</div>
         <button type="button" id="btn-llamar-tanda">📢 LLAMAR TANDA SELECCIONADA (0)</button>
       </div>
 
@@ -215,8 +228,8 @@
       </div>
 
       <div class="campo-grupo">
-        <label>Nombre(s) del Donante o Tanda:</label>
-        <input type="text" id="id" placeholder="Ej: Juan Pérez o varios separados por coma" autocomplete="off">
+        <label>Nombre(s) del Donante o Tanda (máx. 4):</label>
+        <input type="text" id="id" placeholder="Ej: Juan Pérez o hasta 4 separados por coma" autocomplete="off">
       </div>
 
       <button id="btn-llamar" class="btn-principal">📢 LLAMAR A EXTRACCIÓN</button>
@@ -232,7 +245,8 @@
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
       SECTOR_ACTUAL: "Extraccion",
-      NODO_COLA_EXTRACCION: "cola_extraccion"
+      NODO_COLA_EXTRACCION: "cola_extraccion",
+      MAX_TANDA: 4
     };
 
     const firebaseConfig = {
@@ -250,8 +264,19 @@
     const inputNombre = document.getElementById("id");
     const selectCons = document.getElementById("cons");
     const btnLlamarTanda = document.getElementById("btn-llamar-tanda");
+    const avisoTopeTanda = document.getElementById("aviso-tope-tanda");
     let seleccionadosTanda = new Map();
     let idIndividualKey = null;
+    let timerAvisoTope = null;
+
+    function mostrarAvisoTope(mensaje) {
+      avisoTopeTanda.textContent = mensaje || `⚠️ Máximo ${CONFIG.MAX_TANDA} personas por tanda para que se lea bien en la TV.`;
+      avisoTopeTanda.style.display = "block";
+      clearTimeout(timerAvisoTope);
+      timerAvisoTope = setTimeout(() => {
+        avisoTopeTanda.style.display = "none";
+      }, 3000);
+    }
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
@@ -280,7 +305,7 @@
       const cant = seleccionadosTanda.size;
       if (cant > 0) {
         btnLlamarTanda.style.display = "block";
-        btnLlamarTanda.textContent = `📢 LLAMAR TANDA SELECCIONADA (${cant})`;
+        btnLlamarTanda.textContent = `📢 LLAMAR TANDA SELECCIONADA (${cant}/${CONFIG.MAX_TANDA})`;
       } else {
         btnLlamarTanda.style.display = "none";
       }
@@ -322,6 +347,11 @@
           chk.addEventListener("change", () => {
             const k = chk.getAttribute("data-key");
             if (chk.checked) {
+              if (seleccionadosTanda.size >= CONFIG.MAX_TANDA) {
+                chk.checked = false;
+                mostrarAvisoTope();
+                return;
+              }
               seleccionadosTanda.set(k, {
                 identificador: chk.getAttribute("data-nombre"),
                 tipo: chk.getAttribute("data-tipo")
@@ -421,6 +451,10 @@
 
     btnLlamarTanda.addEventListener("click", () => {
       if (seleccionadosTanda.size === 0) return;
+      if (seleccionadosTanda.size > CONFIG.MAX_TANDA) {
+        mostrarAvisoTope();
+        return;
+      }
       const keys = Array.from(seleccionadosTanda.keys());
       const nombres = Array.from(seleccionadosTanda.values()).map(v => v.identificador);
       const textoTv = nombres.join(" • ");
@@ -434,6 +468,10 @@
       const raw = inputNombre.value.trim();
       if (!raw) return alert("Escribí al menos un nombre.");
       const nombres = raw.split(",").map(s => s.trim()).filter(Boolean);
+      if (nombres.length > CONFIG.MAX_TANDA) {
+        alert(`Podés llamar hasta ${CONFIG.MAX_TANDA} personas por tanda para que se lea bien en la TV.`);
+        return;
+      }
       const keys = idIndividualKey ? [idIndividualKey] : [];
 
       emitirLlamadoExtraccion(nombres.join(" • "), nombres, keys);
@@ -442,15 +480,16 @@
     });
 
     document.getElementById("btn-repetir").addEventListener("click", () => {
-      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), {
-        ...(document.getElementById("ultimo-donante").textContent !== "-" ? {
-          identificador: document.getElementById("ultimo-donante").textContent,
+      const actual = document.getElementById("ultimo-donante").textContent;
+      if (actual && actual !== "-") {
+        set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), {
+          identificador: actual,
           sector: CONFIG.SECTOR_ACTUAL,
           consultorio: selectCons.value,
           accion: "repetir",
           timestamp: Date.now()
-        } : {})
-      });
+        });
+      }
     });
   </script>
 </body>
