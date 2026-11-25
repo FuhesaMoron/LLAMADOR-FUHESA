@@ -198,8 +198,15 @@
       font-weight: 900;
       color: #ffffff;
       margin: 10px 0;
-      word-break: break-word;
-      line-height: 1.1;
+      word-break: normal;
+      overflow-wrap: break-word;
+      line-height: 1.15;
+    }
+
+    /* Ajuste automático cuando Extracción llama en tanda */
+    .turno-actual.es-tanda {
+      font-size: 1.95rem;
+      line-height: 1.25;
     }
 
     .info-destino {
@@ -529,6 +536,10 @@
 
           if (datos && datos.identificador) {
             valEl.textContent = datos.identificador;
+            const esTanda = nombreSector === "Extraccion" && (
+              String(datos.identificador).includes("•") || String(datos.identificador).length > 22
+            );
+            valEl.classList.toggle("es-tanda", esTanda);
             
             let textoDestino = datos.consultorio || nombreSector;
             let textoTipo = datos.tipo ? `<span class="etiqueta-tipo">${datos.tipo}</span>` : '';
@@ -557,6 +568,7 @@
             }
           } else {
             valEl.textContent = "--";
+            valEl.classList.remove("es-tanda");
             destEl.innerHTML = "Aguarde su llamado";
             cardEl.classList.remove("activo", "prioridad-club", "prioridad-plaquetas", "parpadeando");
           }
