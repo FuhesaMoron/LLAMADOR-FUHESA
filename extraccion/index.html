@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Extracción - FU.HE.SA</title>
+  <title>Panel Extracción - Fu.He.Sa</title>
   <style>
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
@@ -245,6 +245,8 @@
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
       SECTOR_ACTUAL: "Extraccion",
+      NODO_SECTORES: "sectores",
+      NODO_HISTORIAL: "historial",
       NODO_COLA_EXTRACCION: "cola_extraccion",
       MAX_TANDA: 4
     };
@@ -267,6 +269,7 @@
     const avisoTopeTanda = document.getElementById("aviso-tope-tanda");
     let seleccionadosTanda = new Map();
     let idIndividualKey = null;
+    let ultimoTextoExtraccion = null;
     let timerAvisoTope = null;
 
     function mostrarAvisoTope(mensaje) {
@@ -388,14 +391,16 @@
       }
     });
 
-    onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
+    onValue(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
       if (snapshot.exists()) {
         const d = snapshot.val();
-        elDonante.textContent = d.identificador;
-        elInfo.textContent = d.consultorio || "Sala de Extracción";
+        ultimoTextoExtraccion = d.identificador || null;
+        elDonante.textContent = d.identificador || "-";
+        elInfo.textContent = d.identificador ? (d.consultorio || "Sala de Extracción") : "Sin llamados activos";
       } else {
+        ultimoTextoExtraccion = null;
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
       }
@@ -424,7 +429,8 @@
         timestamp: Date.now()
       };
 
-      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosTv);
+      ultimoTextoExtraccion = textoMostrar;
+      set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosTv);
 
       listaNombresIndividuales.forEach(nombre => {
         const itemHist = {
@@ -434,7 +440,7 @@
           accion: "llamado",
           timestamp: Date.now()
         };
-        push(ref(db, 'historial'), itemHist);
+        push(ref(db, CONFIG.NODO_HISTORIAL), itemHist);
         guardarSheets({
           fechaHora: fechaHoraStr,
           identificador: nombre,
@@ -479,18 +485,21 @@
       idIndividualKey = null;
     });
 
-    document.getElementById("btn-repetir").addEventListener("click", () => {
-      const actual = document.getElementById("ultimo-donante").textContent;
-      if (actual && actual !== "-") {
-        set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), {
-          identificador: actual,
+    function repetirExtraccion() {
+      const textoRepetir = ultimoTextoExtraccion || document.getElementById("ultimo-donante").textContent;
+      if (textoRepetir && textoRepetir !== "-") {
+        set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), {
+          identificador: textoRepetir,
           sector: CONFIG.SECTOR_ACTUAL,
           consultorio: selectCons.value,
           accion: "repetir",
           timestamp: Date.now()
         });
       }
-    });
+    }
+
+    document.getElementById("btn-repetir").addEventListener("click", repetirExtraccion);
+    document.getElementById("box-repetir-tactil").addEventListener("click", repetirExtraccion);
   </script>
 </body>
 </html>
