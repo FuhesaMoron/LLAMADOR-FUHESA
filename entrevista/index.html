@@ -40,7 +40,7 @@
       border-left: 6px solid #1e3a8a;
       padding: 14px;
       border-radius: 10px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
       text-align: center;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
@@ -50,6 +50,59 @@
     .ultimo-valor { font-size: 1.8rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
     .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
+
+    /* Bloque de resolución post-entrevista (Apto -> Extracción / No Apto) */
+    .bloque-resolucion {
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .resolucion-titulo {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #1e40af;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .resolucion-botones {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 8px;
+    }
+    .btn-apto {
+      background: #16a34a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 10px;
+      font-size: 0.95rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .btn-apto:hover { background: #15803d; }
+    .btn-no-apto {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: 10px;
+      padding: 11px 8px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-no-apto:hover { background: #fecaca; }
+    .aviso-resolucion {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: center;
+      color: #166534;
+      display: none;
+    }
 
     .bandeja-pendientes {
       background: #f0fdf4;
@@ -278,6 +331,15 @@
         <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
         <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
       </div>
+
+      <div class="bloque-resolucion" id="bloque-resolucion">
+        <div class="resolucion-titulo" id="resolucion-nombre">Resultado de Entrevista</div>
+        <div class="resolucion-botones">
+          <button type="button" class="btn-apto" id="btn-pasar-extraccion">✅ Apto → Extracción</button>
+          <button type="button" class="btn-no-apto" id="btn-no-apto">❌ No Apto</button>
+        </div>
+        <div class="aviso-resolucion" id="aviso-resolucion"></div>
+      </div>
       
       <div class="campo-grupo">
         <label>Consultorio:</label>
@@ -320,6 +382,7 @@
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
       SECTOR_ACTUAL: "Entrevista",
       NODO_COLA_ENTREVISTA: "cola_entrevista",
+      NODO_COLA_EXTRACCION: "cola_extraccion",
       ANTI_REBOTE_MS: 900,
       STORAGE_KEY_CONSULTORIO: "fuhesa_entrevista_cons",
       PRIORIDAD_TIPO: {
@@ -520,16 +583,27 @@
     onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
+      const bloqueRes = document.getElementById("bloque-resolucion");
+      const tituloRes = document.getElementById("resolucion-nombre");
 
       if (snapshot.exists()) {
         const datos = snapshot.val();
+        ultimoLlamadoLocal = datos;
         const hora = formatearHoraCorta(datos.timestamp);
         const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : '';
         elDonante.textContent = datos.identificador;
         elInfo.textContent = `${datos.consultorio}${etiquetaTipo}${hora ? ' • ' + hora + ' hs' : ''}`;
+
+        if (datos.identificador) {
+          bloqueRes.style.display = "block";
+          tituloRes.textContent = `¿Resultado para ${datos.identificador}?`;
+        } else {
+          bloqueRes.style.display = "none";
+        }
       } else {
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
+        bloqueRes.style.display = "none";
       }
     });
 
@@ -545,6 +619,60 @@
         registrarFalloSheet();
       });
     }
+
+    function mostrarAvisoResolucion(texto, color) {
+      const aviso = document.getElementById("aviso-resolucion");
+      aviso.textContent = texto;
+      aviso.style.color = color;
+      aviso.style.display = "block";
+      setTimeout(() => {
+        aviso.style.display = "none";
+      }, 2500);
+    }
+
+    document.getElementById("btn-pasar-extraccion").addEventListener("click", () => {
+      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
+
+      const datosExtraccion = {
+        identificador: ultimoLlamadoLocal.identificador,
+        tipo: ultimoLlamadoLocal.tipo || "Sin Turno",
+        origenConsultorio: ultimoLlamadoLocal.consultorio || "",
+        timestamp: Date.now()
+      };
+
+      push(ref(db, CONFIG.NODO_COLA_EXTRACCION), datosExtraccion).then(() => {
+        mostrarAvisoResolucion(`✅ ${datosExtraccion.identificador} enviado a Extracción.`, "#166534");
+      }).catch(err => {
+        console.error("Error al enviar a Extracción:", err);
+      });
+    });
+
+    document.getElementById("btn-no-apto").addEventListener("click", () => {
+      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
+      const ahora = new Date();
+      const timestampAhora = Date.now();
+      const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      push(ref(db, 'historial'), {
+        identificador: ultimoLlamadoLocal.identificador,
+        sector: CONFIG.SECTOR_ACTUAL,
+        consultorio: ultimoLlamadoLocal.consultorio || "",
+        tipo: ultimoLlamadoLocal.tipo || "",
+        accion: "no_apto",
+        estado: "No Apto",
+        timestamp: timestampAhora
+      }).catch(err => console.error("Error al guardar No Apto en historial:", err));
+
+      guardarDonanteEnSheets({
+        fechaHora: fechaHoraStr,
+        identificador: ultimoLlamadoLocal.identificador,
+        sector: CONFIG.SECTOR_ACTUAL,
+        consultorio: `${ultimoLlamadoLocal.consultorio} (${ultimoLlamadoLocal.tipo || ""})`,
+        observacion: "No Apto / Diferido en Entrevista"
+      });
+
+      mostrarAvisoResolucion(`Registrado como No Apto (${ultimoLlamadoLocal.identificador}).`, "#991b1b");
+    });
 
     function ejecutarLlamado() {
       if (bloqueadoPorRebote) return;
