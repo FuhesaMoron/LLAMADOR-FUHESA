@@ -38,16 +38,31 @@
       border-left: 6px solid #0f766e;
       padding: 14px;
       border-radius: 10px;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
       text-align: center;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
     }
-    .ultimo-box:active { transform: scale(0.98); background: #ccfbf1; }
     .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #115e59; font-weight: 800; }
     .ultimo-valor { font-size: 2rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
-    .ultimo-aviso { font-size: 0.8rem; color: #0f766e; margin-top: 6px; font-weight: bold; }
+
+    .fila-numero {
+      display: grid;
+      grid-template-columns: 64px 1fr 64px;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-paso {
+      height: 54px;
+      font-size: 1.4rem;
+      font-weight: 900;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    .btn-paso:hover { background: #e2e8f0; }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
     .campo-grupo { margin-bottom: 16px; }
@@ -62,33 +77,36 @@
       background: #fff;
       color: #1a202c;
       font-weight: 700;
+      text-align: center;
     }
-    select:focus, input[type="number"]:focus {
-      border-color: #0f766e;
-      outline: none;
-      background: #f0fdfa;
-    }
+    select { text-align: left; }
 
     .btn-principal { 
       width: 100%; 
       padding: 18px; 
       border: none; 
-      font-size: 1.25rem; 
+      font-size: 1.2rem; 
       border-radius: 12px; 
       cursor: pointer; 
       font-weight: 900; 
       margin-top: 5px;
-      transition: background 0.2s, transform 0.1s;
     }
-    .btn-principal:active { transform: scale(0.98); }
+    .btn-principal:disabled { opacity: 0.7; cursor: not-allowed; }
     #btn-llamar { background: #0f766e; color: white; }
-    #btn-llamar:hover { background: #115e59; }
+    #btn-llamar:hover:not(:disabled) { background: #115e59; }
     #btn-repetir { background: #ffc107; color: #212529; margin-top: 10px; }
-    #btn-repetir:hover { background: #e0a800; }
+
+    .atajos-ayuda {
+      margin-top: 12px;
+      font-size: 0.82rem;
+      color: #475569;
+      text-align: center;
+      font-weight: 600;
+    }
 
     .btn-jornada {
       width: 100%;
-      margin-top: 18px;
+      margin-top: 16px;
       padding: 12px;
       background: #f1f5f9;
       color: #475569;
@@ -98,20 +116,6 @@
       font-weight: 800;
       cursor: pointer;
     }
-    .btn-jornada:hover { background: #e2e8f0; color: #1e293b; }
-
-    #error-aviso {
-      color: #c53030;
-      background: #fff5f5;
-      border: 1px solid #feb2b2;
-      padding: 10px;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 0.95rem;
-      text-align: center;
-      margin-bottom: 12px;
-      display: none;
-    }
 
     #login-overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -119,7 +123,7 @@
       padding: 20px; box-sizing: border-box;
     }
     .login-box { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; }
-    .login-box input { margin-top: 15px; margin-bottom: 20px; text-align: center; }
+    .login-box input { margin-top: 15px; margin-bottom: 20px; }
     .login-box button { background: #0f766e; color: white; width: 100%; padding: 14px; font-size: 1.2rem; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
   </style>
 </head>
@@ -141,11 +145,10 @@
         <span id="badge-conexion" class="estado-red">Conectando...</span>
       </div>
 
-      <div class="ultimo-box" id="box-repetir-tactil" title="Tocá para repetir">
+      <div class="ultimo-box" id="box-repetir-tactil" title="Alt + R o tocá acá para repetir">
         <div class="ultimo-titulo">Último llamado en Recepción</div>
         <div class="ultimo-valor" id="ultimo-donante">-</div>
         <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
-        <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
       </div>
 
       <div class="campo-grupo">
@@ -168,14 +171,18 @@
       </div>
 
       <div class="campo-grupo">
-        <label>Número de Turno / Donante:</label>
-        <input type="number" id="id" min="1" step="1" placeholder="Ej: 15" autocomplete="off">
+        <label>Número de Turno:</label>
+        <div class="fila-numero">
+          <button type="button" class="btn-paso" id="btn-menos" title="Restar 1">-</button>
+          <input type="number" id="id" min="1" step="1" value="1" autocomplete="off">
+          <button type="button" class="btn-paso" id="btn-mas" title="Sumar 1">+</button>
+        </div>
       </div>
-
-      <div id="error-aviso">⚠️ Por favor, ingresá un número de turno válido.</div>
 
       <button id="btn-llamar" class="btn-principal">📢 LLAMAR Y PASAR A ENTREVISTA</button>
       <button id="btn-repetir" class="btn-principal">🔄 REPETIR ÚLTIMO LLAMADO</button>
+
+      <div class="atajos-ayuda">Atajos: <b>Enter</b> o <b>Espacio</b> llama y avanza • <b>Alt + R</b> repite</div>
 
       <button type="button" id="btn-nueva-jornada" class="btn-jornada">🧹 Limpiar Sectores y Colas (Inicio de Jornada)</button>
     </div>
@@ -193,7 +200,8 @@
       NODO_HISTORIAL: "historial",
       NODO_COLA_ENTREVISTA: "cola_entrevista",
       NODO_COLA_EXTRACCION: "cola_extraccion",
-      SECTORES_A_LIMPIAR: ["Recepcion", "Entrevista", "Extraccion"]
+      SECTORES_A_LIMPIAR: ["Recepcion", "Entrevista", "Extraccion"],
+      ANTI_REBOTE_MS: 600
     };
 
     const firebaseConfig = {
@@ -211,8 +219,9 @@
     const inputNumero = document.getElementById("id");
     const selectCons = document.getElementById("cons");
     const selectTipo = document.getElementById("tipo-atencion");
-    const errorAviso = document.getElementById("error-aviso");
+    const btnLlamar = document.getElementById("btn-llamar");
     let ultimoRecepcion = null;
+    let bloqueadoRebote = false;
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
@@ -263,16 +272,32 @@
       }).catch(err => console.error(err));
     }
 
-    function llamarTurno() {
-      const valorLimpio = String(inputNumero.value || "").trim();
-      const numero = parseInt(valorLimpio, 10);
+    function obtenerNumeroActual() {
+      const n = parseInt(String(inputNumero.value || "").trim(), 10);
+      return isNaN(n) || n < 1 ? 1 : n;
+    }
 
-      if (!valorLimpio || isNaN(numero) || numero <= 0) {
-        errorAviso.style.display = "block";
-        inputNumero.focus();
-        return;
-      }
-      errorAviso.style.display = "none";
+    document.getElementById("btn-menos").addEventListener("click", () => {
+      inputNumero.value = Math.max(1, obtenerNumeroActual() - 1);
+      inputNumero.focus();
+    });
+
+    document.getElementById("btn-mas").addEventListener("click", () => {
+      inputNumero.value = obtenerNumeroActual() + 1;
+      inputNumero.focus();
+    });
+
+    function llamarYAvanzar() {
+      if (bloqueadoRebote) return;
+      const numero = obtenerNumeroActual();
+      inputNumero.value = numero;
+
+      bloqueadoRebote = true;
+      btnLlamar.disabled = true;
+      setTimeout(() => {
+        bloqueadoRebote = false;
+        btnLlamar.disabled = false;
+      }, CONFIG.ANTI_REBOTE_MS);
 
       const identificador = String(numero);
       const cons = selectCons.value;
@@ -306,18 +331,10 @@
         observacion: ""
       });
 
-      inputNumero.value = "";
+      inputNumero.value = numero + 1;
       selectTipo.value = "Sin Turno";
       inputNumero.focus();
     }
-
-    document.getElementById("btn-llamar").addEventListener("click", llamarTurno);
-    inputNumero.addEventListener("keypress", (e) => { if (e.key === 'Enter') llamarTurno(); });
-    inputNumero.addEventListener("input", () => {
-      if (errorAviso.style.display === "block") {
-        errorAviso.style.display = "none";
-      }
-    });
 
     function repetirLlamado() {
       if (!ultimoRecepcion || !ultimoRecepcion.identificador) return;
@@ -328,21 +345,42 @@
       });
     }
 
+    btnLlamar.addEventListener("click", llamarYAvanzar);
     document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
     document.getElementById("box-repetir-tactil").addEventListener("click", repetirLlamado);
 
+    document.addEventListener("keydown", (e) => {
+      if (document.getElementById("panel-contenido").style.display === "none") return;
+      const tag = document.activeElement?.tagName;
+
+      if (e.altKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        repetirLlamado();
+        return;
+      }
+
+      if (e.key === "Enter" && tag !== "SELECT" && tag !== "BUTTON") {
+        e.preventDefault();
+        llamarYAvanzar();
+      } else if (e.code === "Space" && tag !== "INPUT" && tag !== "SELECT" && tag !== "BUTTON") {
+        e.preventDefault();
+        llamarYAvanzar();
+      }
+    });
+
     document.getElementById("btn-nueva-jornada").addEventListener("click", async () => {
-      if (!confirm("¿Limpiar los turnos activos de todos los sectores y vaciar las colas de Entrevista y Extracción para iniciar la jornada?")) return;
+      if (!confirm("¿Limpiar los sectores y colas para iniciar la jornada? El historial no se borra.")) return;
 
       try {
         const promesas = CONFIG.SECTORES_A_LIMPIAR.map(sec => remove(ref(db, `${CONFIG.NODO_SECTORES}/${sec}`)));
         promesas.push(remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA)));
         promesas.push(remove(ref(db, CONFIG.NODO_COLA_EXTRACCION)));
         await Promise.all(promesas);
-        alert("✅ Sectores y colas limpiados. Jornada lista para arrancar.");
+        inputNumero.value = 1;
+        alert("✅ Sectores y colas limpiados. Jornada lista.");
       } catch (err) {
         console.error(err);
-        alert("Hubo un problema al limpiar los datos. Revisá la conexión.");
+        alert("Hubo un problema al limpiar los datos.");
       }
     });
   </script>
