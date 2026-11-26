@@ -41,23 +41,32 @@
       margin-bottom: 18px;
       text-align: center;
       cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
     }
+    .ultimo-box:active { transform: scale(0.98); background: #ccfbf1; }
     .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #115e59; font-weight: 800; }
-    .ultimo-valor { font-size: 1.8rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
+    .ultimo-valor { font-size: 2rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
+    .ultimo-aviso { font-size: 0.8rem; color: #0f766e; margin-top: 6px; font-weight: bold; }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
     .campo-grupo { margin-bottom: 16px; }
 
-    select, input[type="text"], input[type="password"] { 
+    select, input[type="number"], input[type="password"] { 
       width: 100%; 
       padding: 14px; 
-      font-size: 1.2rem; 
+      font-size: 1.25rem; 
       box-sizing: border-box; 
       border: 2px solid #cbd5e1; 
       border-radius: 10px; 
       background: #fff;
-      font-weight: 600;
+      color: #1a202c;
+      font-weight: 700;
+    }
+    select:focus, input[type="number"]:focus {
+      border-color: #0f766e;
+      outline: none;
+      background: #f0fdfa;
     }
 
     .btn-principal { 
@@ -69,10 +78,13 @@
       cursor: pointer; 
       font-weight: 900; 
       margin-top: 5px;
+      transition: background 0.2s, transform 0.1s;
     }
+    .btn-principal:active { transform: scale(0.98); }
     #btn-llamar { background: #0f766e; color: white; }
     #btn-llamar:hover { background: #115e59; }
     #btn-repetir { background: #ffc107; color: #212529; margin-top: 10px; }
+    #btn-repetir:hover { background: #e0a800; }
 
     .btn-jornada {
       width: 100%;
@@ -87,6 +99,19 @@
       cursor: pointer;
     }
     .btn-jornada:hover { background: #e2e8f0; color: #1e293b; }
+
+    #error-aviso {
+      color: #c53030;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+    }
 
     #login-overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -120,6 +145,7 @@
         <div class="ultimo-titulo">Último llamado en Recepción</div>
         <div class="ultimo-valor" id="ultimo-donante">-</div>
         <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
+        <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
       </div>
 
       <div class="campo-grupo">
@@ -142,9 +168,11 @@
       </div>
 
       <div class="campo-grupo">
-        <label>Nombre y Apellido del Donante:</label>
-        <input type="text" id="id" placeholder="Ej: Juan Pérez" autocomplete="off" autocapitalize="words">
+        <label>Número de Turno / Donante:</label>
+        <input type="number" id="id" min="1" step="1" placeholder="Ej: 15" autocomplete="off">
       </div>
+
+      <div id="error-aviso">⚠️ Por favor, ingresá un número de turno válido.</div>
 
       <button id="btn-llamar" class="btn-principal">📢 LLAMAR Y PASAR A ENTREVISTA</button>
       <button id="btn-repetir" class="btn-principal">🔄 REPETIR ÚLTIMO LLAMADO</button>
@@ -180,18 +208,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const inputNombre = document.getElementById("id");
+    const inputNumero = document.getElementById("id");
     const selectCons = document.getElementById("cons");
     const selectTipo = document.getElementById("tipo-atencion");
+    const errorAviso = document.getElementById("error-aviso");
     let ultimoRecepcion = null;
-
-    function capitalizarNombre(texto) {
-      return texto
-        .trim()
-        .replace(/\s+/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, letra => letra.toUpperCase());
-    }
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
@@ -200,7 +221,7 @@
       if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
         document.getElementById("login-overlay").style.display = "none";
         document.getElementById("panel-contenido").style.display = "block";
-        inputNombre.focus();
+        inputNumero.focus();
       } else {
         alert("Contraseña incorrecta");
       }
@@ -242,11 +263,18 @@
       }).catch(err => console.error(err));
     }
 
-    function llamarDonante() {
-      const raw = inputNombre.value.trim();
-      if (!raw) return alert("Escribí el nombre y apellido del donante.");
+    function llamarTurno() {
+      const valorLimpio = String(inputNumero.value || "").trim();
+      const numero = parseInt(valorLimpio, 10);
 
-      const nombre = capitalizarNombre(raw);
+      if (!valorLimpio || isNaN(numero) || numero <= 0) {
+        errorAviso.style.display = "block";
+        inputNumero.focus();
+        return;
+      }
+      errorAviso.style.display = "none";
+
+      const identificador = String(numero);
       const cons = selectCons.value;
       const tipo = selectTipo.value;
       const ahora = new Date();
@@ -254,7 +282,7 @@
       const ts = Date.now();
 
       const datosLlamado = {
-        identificador: nombre,
+        identificador: identificador,
         sector: CONFIG.SECTOR_ACTUAL,
         consultorio: cons,
         tipo: tipo,
@@ -265,26 +293,31 @@
       ultimoRecepcion = datosLlamado;
       set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosLlamado);
       push(ref(db, CONFIG.NODO_COLA_ENTREVISTA), {
-        identificador: nombre,
+        identificador: identificador,
         tipo: tipo,
         timestamp: ts
       });
       push(ref(db, CONFIG.NODO_HISTORIAL), datosLlamado);
       guardarSheets({
         fechaHora: fechaHoraStr,
-        identificador: nombre,
+        identificador: identificador,
         sector: CONFIG.SECTOR_ACTUAL,
         consultorio: `${cons} (${tipo})`,
         observacion: ""
       });
 
-      inputNombre.value = "";
+      inputNumero.value = "";
       selectTipo.value = "Sin Turno";
-      inputNombre.focus();
+      inputNumero.focus();
     }
 
-    document.getElementById("btn-llamar").addEventListener("click", llamarDonante);
-    inputNombre.addEventListener("keypress", (e) => { if (e.key === 'Enter') llamarDonante(); });
+    document.getElementById("btn-llamar").addEventListener("click", llamarTurno);
+    inputNumero.addEventListener("keypress", (e) => { if (e.key === 'Enter') llamarTurno(); });
+    inputNumero.addEventListener("input", () => {
+      if (errorAviso.style.display === "block") {
+        errorAviso.style.display = "none";
+      }
+    });
 
     function repetirLlamado() {
       if (!ultimoRecepcion || !ultimoRecepcion.identificador) return;
