@@ -6,33 +6,31 @@
   <title>Panel Recepción - FU.HE.SA</title>
   <style>
     :root {
-      --bg-page: linear-gradient(155deg, #eef2ff 0%, #f8fafc 48%, #fff1f2 100%);
+      --bg-page: linear-gradient(155deg, #eef2ff 0%, #f8fafc 50%, #fff1f2 100%);
       --card-bg: #ffffff;
       --ink-main: #0f172a;
-      --ink-muted: #475569;
       --navy: #1e3a8a;
       --blood-red: #be123c;
       --border-soft: #cbd5e1;
-      --shadow-main: 0 14px 32px rgba(15, 23, 42, 0.09);
+      --shadow-main: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 20px;
-      max-width: 440px;
-      margin: 18px auto;
+      padding: 10px 14px;
+      max-width: 430px;
+      margin: 6px auto;
       background: var(--bg-page);
-      min-height: 100vh;
       box-sizing: border-box;
       color: var(--ink-main);
     }
 
     #panel-contenido {
       background: var(--card-bg);
-      padding: 22px;
-      border-radius: 20px;
+      padding: 14px 16px;
+      border-radius: 16px;
       box-shadow: var(--shadow-main);
-      border: 1px solid rgba(203, 213, 225, 0.8);
+      border: 1px solid #cbd5e1;
       position: relative;
       overflow: hidden;
     }
@@ -43,7 +41,7 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 5px;
+      height: 4px;
       background: linear-gradient(90deg, var(--navy), #2563eb, #e11d48, var(--blood-red));
     }
 
@@ -51,63 +49,39 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      padding-top: 4px;
-      gap: 8px;
+      margin-bottom: 8px;
+      gap: 6px;
     }
 
     h2 {
       color: var(--navy);
       margin: 0;
-      font-size: 1.42rem;
+      font-size: 1.25rem;
       font-weight: 900;
-      letter-spacing: -0.3px;
-    }
-
-    .sub-sello {
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--blood-red);
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      border-radius: 999px;
-      padding: 4px 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-bottom: 12px;
     }
 
     .estado-grupo {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
 
     .estado-red {
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 800;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
       background: #e2e8f0;
       color: #475569;
     }
-    .estado-online {
-      background: #dcfce7;
-      color: #166534;
-      box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.25);
-    }
-    .estado-offline {
-      background: #fee2e2;
-      color: #991b1b;
-      box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.25);
-    }
+    .estado-online { background: #dcfce7; color: #166534; }
+    .estado-offline { background: #fee2e2; color: #991b1b; }
     .estado-sheet-err {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 4px 8px;
+      padding: 3px 7px;
       border-radius: 999px;
       background: #fef3c7;
       color: #92400e;
@@ -117,31 +91,30 @@
 
     .ultimo-box {
       background: linear-gradient(135deg, #eff6ff 0%, #fff1f2 100%);
-      border-left: 5px solid var(--blood-red);
+      border-left: 4px solid var(--blood-red);
       border-top: 1px solid #e2e8f0;
       border-right: 1px solid #e2e8f0;
       border-bottom: 1px solid #cbd5e1;
-      padding: 12px 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
       text-align: center;
-      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.06);
     }
     .ultimo-titulo {
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
       color: #475569;
       font-weight: 800;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
     }
     .ultimo-valor {
-      font-size: 1.55rem;
+      font-size: 1.35rem;
       font-weight: 900;
       color: #0f172a;
-      margin: 3px 0;
+      margin: 1px 0;
     }
     .ultimo-detalle {
-      font-size: 0.86rem;
+      font-size: 0.8rem;
       color: #334155;
       font-weight: 600;
     }
@@ -149,133 +122,106 @@
     label {
       font-weight: 800;
       display: block;
-      margin-bottom: 5px;
-      font-size: 0.9rem;
+      margin-bottom: 3px;
+      font-size: 0.84rem;
       color: #1e293b;
     }
 
     select, input {
       width: 100%;
-      padding: 10px 12px;
-      font-size: 1rem;
+      padding: 7px 10px;
+      font-size: 0.94rem;
       box-sizing: border-box;
       border: 1.5px solid var(--border-soft);
-      border-radius: 10px;
+      border-radius: 8px;
       background: #f8fafc;
       color: var(--ink-main);
       font-weight: 600;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     }
     select:focus, input:focus {
       outline: none;
       border-color: var(--navy);
       background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
     }
 
     button {
       width: 100%;
-      padding: 11px 14px;
+      padding: 8px 12px;
       border: none;
-      font-size: 1.04rem;
-      border-radius: 10px;
+      font-size: 0.96rem;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: 800;
-      transition: all 0.18s ease;
+      transition: transform 0.12s ease, opacity 0.15s ease;
     }
-    button:active:not(:disabled) {
-      transform: scale(0.985);
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    button:active:not(:disabled) { transform: scale(0.985); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .fila-correlativo {
       display: flex;
-      gap: 8px;
-      margin-top: 14px;
+      gap: 6px;
+      margin-top: 9px;
     }
     #btn-siguiente {
       background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
       color: white;
       flex: 2.3;
-      font-size: 1.08rem;
-      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.24);
-    }
-    #btn-siguiente:hover:not(:disabled) {
-      background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+      font-size: 1rem;
     }
     #btn-config-num {
       background: #64748b;
       color: white;
       flex: 1;
-      font-size: 0.85rem;
-      padding: 8px;
-    }
-    #btn-config-num:hover {
-      background: #475569;
+      font-size: 0.8rem;
+      padding: 6px;
     }
 
     #btn-llamar {
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       color: white;
-      margin-top: 10px;
-      font-size: 1rem;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
-    }
-    #btn-llamar:hover:not(:disabled) {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      margin-top: 7px;
+      font-size: 0.94rem;
     }
 
     #btn-repetir {
       background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
       color: #1e293b;
-      margin-top: 8px;
-      font-size: 0.95rem;
-      box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
-    }
-    #btn-repetir:hover {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      margin-top: 6px;
+      font-size: 0.9rem;
     }
 
     .seccion-derivacion {
       background: linear-gradient(160deg, #eff6ff 0%, #fff1f2 100%);
-      border: 2px dashed #93c5fd;
-      padding: 13px;
-      border-radius: 12px;
-      margin-top: 16px;
-      margin-bottom: 12px;
+      border: 1.5px dashed #93c5fd;
+      padding: 9px 11px;
+      border-radius: 10px;
+      margin-top: 10px;
+      margin-bottom: 8px;
     }
     .seccion-derivacion h3 {
-      font-size: 0.94rem;
+      font-size: 0.84rem;
       color: #1e40af;
-      margin: 0 0 6px 0;
+      margin: 0 0 4px 0;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
       font-weight: 900;
     }
     .ayuda-formato {
-      font-size: 0.79rem;
+      font-size: 0.74rem;
       color: #334155;
-      margin: 0 0 8px 0;
+      margin: 0 0 6px 0;
     }
     #btn-derivar {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      margin-top: 10px;
-      font-size: 1rem;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22);
-    }
-    #btn-derivar:hover:not(:disabled) {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      margin-top: 7px;
+      font-size: 0.92rem;
     }
 
     .aviso-derivacion {
-      margin-top: 8px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      margin-top: 6px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 700;
       text-align: center;
       display: none;
@@ -296,40 +242,25 @@
     .atajos-info {
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 9px 11px;
-      margin-top: 10px;
-      font-size: 0.78rem;
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin-top: 8px;
+      font-size: 0.73rem;
       color: #475569;
       text-align: center;
-      line-height: 1.45;
-    }
-
-    .pie-solidario {
-      margin-top: 10px;
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #9f1239;
-      background: #fff1f2;
-      border: 1px solid #fecdd3;
-      border-radius: 8px;
-      padding: 6px 10px;
+      line-height: 1.35;
     }
 
     .separador {
       border: 0;
       border-top: 1px solid #e2e8f0;
-      margin: 13px 0 11px 0;
+      margin: 8px 0;
     }
     #btn-limpiar {
       background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
       color: white;
-      font-size: 0.88rem;
-      padding: 10px;
-    }
-    #btn-limpiar:hover {
-      background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
+      font-size: 0.82rem;
+      padding: 7px;
     }
 
     #login-overlay {
@@ -348,33 +279,18 @@
     }
     .login-box {
       background: white;
-      padding: 32px 28px;
-      border-radius: 18px;
+      padding: 24px 22px;
+      border-radius: 16px;
       box-shadow: var(--shadow-main);
       border: 1px solid #e2e8f0;
       width: 100%;
-      max-width: 320px;
+      max-width: 310px;
       text-align: center;
     }
-    .login-box h2 {
-      margin-bottom: 4px;
-    }
-    .login-box input {
-      margin-top: 12px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    .login-box button {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      color: white;
-    }
-    .error-msg {
-      color: #dc2626;
-      font-size: 0.9rem;
-      margin-top: 8px;
-      font-weight: 700;
-      display: none;
-    }
+    .login-box h2 { margin-bottom: 4px; }
+    .login-box input { margin-top: 10px; margin-bottom: 12px; text-align: center; }
+    .login-box button { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; }
+    .error-msg { color: #dc2626; font-size: 0.85rem; margin-top: 6px; font-weight: 700; display: none; }
   </style>
 </head>
 <body>
@@ -382,7 +298,7 @@
   <div id="login-overlay">
     <div class="login-box">
       <h2>🩸 Acceso Recepción</h2>
-      <p style="font-size: 0.9rem; color: #64748b; margin: 4px 0 0 0;">Ingresá la clave del sector:</p>
+      <p style="font-size: 0.88rem; color: #64748b; margin: 4px 0 0 0;">Ingresá la clave del sector:</p>
       <input type="password" id="input-password" placeholder="Contraseña">
       <button id="btn-login">Entrar</button>
       <div id="error-password" class="error-msg">Contraseña incorrecta</div>
@@ -391,14 +307,12 @@
 
   <div id="panel-contenido" style="display: none;">
     <div class="header-panel">
-      <h2>Panel - Recepción</h2>
+      <h2>🩸 Recepción • FU.HE.SA</h2>
       <div class="estado-grupo">
         <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
         <span id="badge-conexion" class="estado-red">Conectando...</span>
       </div>
     </div>
-
-    <div class="sub-sello">🩸 Banco de Sangre • Hemoterapia FU.HE.SA</div>
 
     <div class="ultimo-box">
       <div class="ultimo-titulo">Último llamado en Recepción</div>
@@ -417,7 +331,7 @@
       <button id="btn-config-num" title="Cambiar número inicial">✏️ Cambiar</button>
     </div>
 
-    <label style="margin-top: 12px;">O Nombre / Número Libre:</label>
+    <label style="margin-top: 9px;">O Nombre / Número Libre:</label>
     <input type="text" id="id" placeholder="Ej: 014 o Juan Pérez (Enter para llamar)">
     
     <button id="btn-llamar">Llamar Donante (Escrito)</button>
@@ -427,15 +341,15 @@
       <h3>➡️ Derivar a Entrevista</h3>
       <p class="ayuda-formato">Formato uniforme: <b>Nombre y Apellido</b> (ej: Juan Pérez)</p>
       
-      <label style="font-size: 0.85rem; margin-bottom: 3px;">Tipo de Atención:</label>
-      <select id="derivar-tipo" style="margin-bottom: 8px;">
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Tipo de Atención:</label>
+      <select id="derivar-tipo" style="margin-bottom: 6px;">
         <option value="Sin Turno" selected>Sin Turno</option>
         <option value="Club de Donantes">Club de Donantes (Prioridad)</option>
         <option value="Plaquetas">Plaquetas</option>
         <option value="Turno">Turno</option>
       </select>
 
-      <label style="font-size: 0.85rem; margin-bottom: 3px;">Nombre y Apellido del Donante:</label>
+      <label style="font-size: 0.8rem; margin-bottom: 2px;">Nombre y Apellido del Donante:</label>
       <input type="text" id="derivar-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
 
       <button id="btn-derivar">📤 Enviar a Entrevista</button>
@@ -446,8 +360,6 @@
       ⌨️ <b>Atajos:</b> <b>Enter/Espacio</b> = Siguiente | <b>Enter</b> en texto = Llamar | <b>Alt+R</b> = Repetir<br>
       🖥️ <b>Puesto:</b> 1 sola pestaña abierta • Revisá <b>Siguiente</b> antes del atajo
     </div>
-
-    <div class="pie-solidario">❤️ Donar sangre es acompañar y salvar vidas</div>
 
     <hr class="separador">
     <button id="btn-limpiar">🧹 Limpiar Tele y Cola (Inicio de Jornada)</button>
