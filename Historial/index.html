@@ -13,7 +13,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 1120px;
+      max-width: 1160px;
       margin: auto;
       background: white;
       padding: 25px;
@@ -30,8 +30,20 @@
     .subtitulo {
       text-align: center;
       color: #4a5568;
-      margin-bottom: 25px;
+      margin-bottom: 12px;
       font-size: 1.05rem;
+    }
+    .aviso-limite {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 20px;
+      display: none;
     }
 
     .filtros-grid {
@@ -109,8 +121,8 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
       margin-bottom: 25px;
     }
     .stat-card {
@@ -128,7 +140,7 @@
       letter-spacing: 0.5px;
     }
     .stat-valor {
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       font-weight: 900;
       color: #1e3a8a;
       margin-top: 5px;
@@ -173,9 +185,23 @@
       font-size: 0.85rem;
       font-weight: bold;
       display: inline-block;
+      background: #e2e8f0;
+      color: #334155;
     }
     .sector-Entrevista { background: #fef3c7; color: #b45309; }
-    .sector-Extracción { background: #fee2e2; color: #990000; }
+    .sector-Extraccion, .sector-Extracción { background: #fee2e2; color: #991b1b; }
+
+    .badge-no-apto {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      display: inline-block;
+    }
 
     .badge-tipo {
       font-size: 0.85rem;
@@ -201,6 +227,7 @@
   <div class="container">
     <h2>Panel de Control y Donantes - FU.HE.SA</h2>
     <div class="subtitulo">Registro único, métricas de flujo, tiempos de atención y auditoría diaria</div>
+    <div class="aviso-limite" id="aviso-limite"></div>
 
     <div class="filtros-grid">
       <div class="filtro-box">
@@ -224,6 +251,14 @@
         <div class="stat-titulo">Donantes Únicos</div>
         <div class="stat-valor" id="stat-total">0</div>
       </div>
+      <div class="stat-card" style="border-left-color: #dc2626;">
+        <div class="stat-titulo">🩸 En Extracción</div>
+        <div class="stat-valor" id="stat-extraccion" style="color: #991b1b;">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #ef4444;">
+        <div class="stat-titulo">❌ No Aptos</div>
+        <div class="stat-valor" id="stat-no-apto" style="color: #b91c1c;">0</div>
+      </div>
       <div class="stat-card" style="border-left-color: #0284c7;">
         <div class="stat-titulo">⏱️ Tiempo Promedio</div>
         <div class="stat-valor" id="stat-tiempo-promedio">0 min</div>
@@ -245,7 +280,7 @@
             <th>Ingreso / Cierre</th>
             <th>Último Sector</th>
             <th>Box / Consultorio & Tipo</th>
-            <th>Donante (Apellido y Nombre)</th>
+            <th>Donante (Nombre y Apellido)</th>
             <th>Tiempo en Circuito</th>
           </tr>
         </thead>
@@ -260,10 +295,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 🔧 CONFIGURACIÓN CENTRALIZADA
     const CONFIG = {
       NODO_HISTORIAL: "historial",
-      LIMITE_REGISTROS_HISTORIAL: 2500
+      LIMITE_REGISTROS_HISTORIAL: 5000
     };
 
     const firebaseConfig = {
@@ -283,8 +317,11 @@
     const btnLimpiarFiltros = document.getElementById("btn-limpiar-filtros");
     const btnExportar = document.getElementById("btn-exportar");
     const cuerpoHistorial = document.getElementById("cuerpo-historial");
+    const avisoLimite = document.getElementById("aviso-limite");
     
     const statTotal = document.getElementById("stat-total");
+    const statExtraccion = document.getElementById("stat-extraccion");
+    const statNoApto = document.getElementById("stat-no-apto");
     const statTiempoPromedio = document.getElementById("stat-tiempo-promedio");
     const statHoraPico = document.getElementById("stat-hora-pico");
     const statPlaquetas = document.getElementById("stat-plaquetas");
@@ -297,9 +334,27 @@
       return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
     }
 
+    function normalizarClaveDonante(texto) {
+      return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+    }
+
     function escaparCsv(valor) {
       const texto = String(valor ?? "");
       return `"${texto.replace(/"/g, '""')}"`;
+    }
+
+    function actualizarAvisoLimite() {
+      if (datosGlobales.length >= CONFIG.LIMITE_REGISTROS_HISTORIAL) {
+        avisoLimite.textContent = `⚠️ Se alcanzó el tope de consulta de ${CONFIG.LIMITE_REGISTROS_HISTORIAL} registros recientes del historial. Si buscás fechas muy antiguas, es posible que no figuren aquí.`;
+        avisoLimite.style.display = "block";
+      } else {
+        avisoLimite.style.display = "none";
+      }
     }
 
     inputCalendario.value = obtenerFechaHoyInput();
@@ -313,10 +368,15 @@
       if (snapshot.exists()) {
         const registros = snapshot.val();
         datosGlobales = Object.values(registros);
+        actualizarAvisoLimite();
         renderizarVista();
       } else {
+        datosGlobales = [];
+        actualizarAvisoLimite();
         cuerpoHistorial.innerHTML = `<tr><td colspan="5" class="sin-datos">No hay registros en la base de datos.</td></tr>`;
         statTotal.textContent = "0";
+        statExtraccion.textContent = "0";
+        statNoApto.textContent = "0";
         statTiempoPromedio.textContent = "0 min";
         statHoraPico.textContent = "-";
         statPlaquetas.textContent = "0";
@@ -332,21 +392,27 @@
       renderizarVista();
     });
 
+    function esEventoNoApto(item) {
+      const accion = normalizarClaveDonante(item?.accion);
+      const estado = normalizarClaveDonante(item?.estado);
+      return accion === "no_apto" || estado === "no apto";
+    }
+
     function renderizarVista() {
       const fechaElegida = inputCalendario.value;
-      const textoBusqueda = inputBuscador.value.trim().toLowerCase();
+      const textoBusqueda = normalizarClaveDonante(inputBuscador.value);
       const esModoBusquedaGlobal = Boolean(textoBusqueda);
 
       const filtradosCrudos = datosGlobales.filter(item => {
         if (!item || !item.timestamp) return false;
 
-        const sectorLimpio = (item.sector || "").toLowerCase();
-        if (sectorLimpio.includes("recepción") || sectorLimpio.includes("recepcion")) return false;
+        const sectorLimpio = normalizarClaveDonante(item.sector);
+        if (sectorLimpio.includes("recepcion")) return false;
 
-        const identificador = (item.identificador || "").trim();
+        const identificador = String(item.identificador || "").trim().replace(/\s+/g, " ");
         if (!identificador || /^\d+$/.test(identificador)) return false;
 
-        if (esModoBusquedaGlobal && !identificador.toLowerCase().includes(textoBusqueda)) return false;
+        if (esModoBusquedaGlobal && !normalizarClaveDonante(identificador).includes(textoBusqueda)) return false;
 
         if (!esModoBusquedaGlobal && fechaElegida) {
           const d = new Date(item.timestamp);
@@ -362,29 +428,39 @@
       filtradosCrudos.forEach(item => {
         const d = new Date(item.timestamp);
         const fechaDia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const nombreKey = (item.identificador || "").trim().toLowerCase();
+        const nombreLimpio = String(item.identificador || "").trim().replace(/\s+/g, " ");
+        const nombreKey = normalizarClaveDonante(nombreLimpio);
         const claveUnica = `${fechaDia}_${nombreKey}`;
         const esRepeticion = String(item.accion || "").toLowerCase() === "repetir";
+        const marcadoNoApto = esEventoNoApto(item);
 
         if (!mapaDonantes.has(claveUnica)) {
           mapaDonantes.set(claveUnica, {
             fechaDia,
-            nombreOriginal: item.identificador,
+            nombreOriginal: nombreLimpio,
             primerTimestamp: item.timestamp,
             ultimoTimestamp: item.timestamp,
             ultimoSector: item.sector,
             consultorio: item.consultorio || '-',
-            tipo: item.tipo || ''
+            tipo: item.tipo || '',
+            esNoApto: marcadoNoApto
           });
         } else {
           const reg = mapaDonantes.get(claveUnica);
           if (!esRepeticion) {
             if (item.timestamp < reg.primerTimestamp) reg.primerTimestamp = item.timestamp;
-            if (item.timestamp > reg.ultimoTimestamp) {
+            if (item.timestamp >= reg.ultimoTimestamp) {
               reg.ultimoTimestamp = item.timestamp;
               reg.ultimoSector = item.sector;
               reg.consultorio = item.consultorio || reg.consultorio;
               reg.tipo = item.tipo || reg.tipo;
+              if (marcadoNoApto) {
+                reg.esNoApto = true;
+              } else if (normalizarClaveDonante(item.sector).includes("extraccion")) {
+                reg.esNoApto = false;
+              }
+            } else if (marcadoNoApto && !normalizarClaveDonante(reg.ultimoSector).includes("extraccion")) {
+              reg.esNoApto = true;
             }
           }
         }
@@ -394,6 +470,8 @@
       filtradosActuales.sort((a, b) => b.ultimoTimestamp - a.ultimoTimestamp);
 
       let countPlaquetas = 0;
+      let countExtraccion = 0;
+      let countNoApto = 0;
       let sumaMinutos = 0;
       let totalConTiempo = 0;
       const horasConteo = {};
@@ -408,8 +486,15 @@
         const horaExacta = `${String(dUltimo.getHours()).padStart(2, '0')}:00 hs`;
         horasConteo[horaExacta] = (horasConteo[horaExacta] || 0) + 1;
 
-        const tipoLower = donante.tipo.toLowerCase();
+        const tipoLower = normalizarClaveDonante(donante.tipo);
         if (tipoLower.includes('plaqueta')) countPlaquetas++;
+
+        const sectorClave = normalizarClaveDonante(donante.ultimoSector);
+        if (donante.esNoApto) {
+          countNoApto++;
+        } else if (sectorClave.includes("extraccion")) {
+          countExtraccion++;
+        }
 
         const diffMs = donante.ultimoTimestamp - donante.primerTimestamp;
         const diffMin = Math.round(diffMs / 60000);
@@ -420,6 +505,8 @@
         const tiempoTexto = diffMin > 0 ? `${diffMin} min` : `En proceso`;
 
         const badgeSector = donante.ultimoSector || "General";
+        const sectorTextoVisible = badgeSector === "Extraccion" ? "Extracción" : badgeSector;
+        const badgeNoApto = donante.esNoApto ? `<span class="badge-no-apto">No Apto</span>` : '';
         const badgeTipo = donante.tipo ? `<span class="badge-tipo">${donante.tipo}</span>` : '';
         const mostrarFecha = esModoBusquedaGlobal || (fechaElegida && donante.fechaDia !== fechaElegida);
 
@@ -429,7 +516,7 @@
               <strong>${horaStr}</strong>
               ${mostrarFecha ? `<span class="fecha-sub">${fechaCorta}</span>` : ""}
             </td>
-            <td><span class="badge-sector sector-${badgeSector}">${badgeSector}</span></td>
+            <td><span class="badge-sector sector-${badgeSector}">${sectorTextoVisible}</span>${badgeNoApto}</td>
             <td>${donante.consultorio} ${badgeTipo}</td>
             <td><strong>${donante.nombreOriginal}</strong></td>
             <td><code>${tiempoTexto}</code></td>
@@ -459,6 +546,8 @@
       }
 
       statTotal.textContent = filtradosActuales.length;
+      statExtraccion.textContent = countExtraccion;
+      statNoApto.textContent = countNoApto;
       statPlaquetas.textContent = countPlaquetas;
     }
 
@@ -468,35 +557,7 @@
         return;
       }
 
-      let csvContent = "\uFEFFFecha;Hora Registro;Último Sector;Box/Consultorio;Tipo;Donante;Tiempo en Circuito (min)\n";
+      let csvContent = "\uFEFFFecha;Hora Registro;Último Sector;Estado;Box/Consultorio;Tipo;Donante;Tiempo en Circuito (min)\n";
 
       filtradosActuales.forEach(d => {
-        const fechaHoraObj = new Date(d.ultimoTimestamp);
-        const fechaStr = fechaHoraObj.toLocaleDateString('es-AR');
-        const horaStr = fechaHoraObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-        const diffMin = Math.round((d.ultimoTimestamp - d.primerTimestamp) / 60000);
-
-        csvContent += [
-          escaparCsv(fechaStr),
-          escaparCsv(horaStr),
-          escaparCsv(d.ultimoSector),
-          escaparCsv(d.consultorio),
-          escaparCsv(d.tipo),
-          escaparCsv(d.nombreOriginal),
-          escaparCsv(diffMin > 0 ? diffMin : 0)
-        ].join(";") + "\n";
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `reporte_clinico_fuhesa_${inputCalendario.value}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    });
-  </script>
-</body>
-</html>
+        const fecha
