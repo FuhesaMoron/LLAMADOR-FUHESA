@@ -60,6 +60,11 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    .ayuda-formato {
+      font-size: 0.78rem;
+      color: #334155;
+      margin: 0 0 8px 0;
+    }
     #btn-derivar {
       background: #10b981;
       color: white;
@@ -158,6 +163,7 @@
 
     <div class="seccion-derivacion">
       <h3>➡️ Derivar a Entrevista</h3>
+      <p class="ayuda-formato">Formato uniforme: <b>Nombre y Apellido</b> (ej: Juan Pérez)</p>
       
       <label style="font-size: 0.85rem; margin-bottom: 3px;">Tipo de Atención:</label>
       <select id="derivar-tipo" style="margin-bottom: 8px;">
@@ -175,7 +181,8 @@
     </div>
 
     <div class="atajos-info">
-      ⌨️ <b>Atajos:</b> <b>Enter/Espacio</b> = Siguiente | <b>Enter</b> en texto = Llamar | <b>Alt+R</b> = Repetir
+      ⌨️ <b>Atajos:</b> <b>Enter/Espacio</b> = Siguiente | <b>Enter</b> en texto = Llamar | <b>Alt+R</b> = Repetir<br>
+      🖥️ <b>Puesto:</b> 1 sola pestaña abierta • Revisá <b>Siguiente</b> antes del atajo
     </div>
 
     <hr class="separador">
@@ -186,7 +193,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 🔧 CONFIGURACIÓN CENTRALIZADA
     const CONFIG = {
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
@@ -451,25 +457,18 @@
       );
     }
 
-    function derivarAEntrevista() {
+function derivarAEntrevista() {
       const inputDerivar = document.getElementById("derivar-nombre");
       const rawNombre = inputDerivar.value;
       if (!rawNombre.trim()) {
-        mostrarAvisoDerivacion("⚠️ Escribí el nombre y apellido para derivar.", "err");
+        mostrarAvisoDerivacion("⚠️ Escribí Nombre y Apellido para derivar.", "err");
         inputDerivar.focus();
         return;
       }
 
       const nombreLimpio = capitalizarNombre(rawNombre);
       const tipoAtencion = document.getElementById("derivar-tipo").value;
-
-      if (yaExisteEnColaEntrevista(nombreLimpio)) {
-        const confirmarDuplicado = confirm(`"${nombreLimpio}" ya figura en la cola de Entrevista. ¿Derivar de todas formas?`);
-        if (!confirmarDuplicado) {
-          inputDerivar.focus();
-          return;
-        }
-      }
+      const yaEstabaEnCola = yaExisteEnColaEntrevista(nombreLimpio);
 
       const datosDerivacion = {
         identificador: nombreLimpio,
@@ -481,13 +480,16 @@
         inputDerivar.value = "";
         document.getElementById("derivar-tipo").value = "Sin Turno";
         inputDerivar.focus();
-        mostrarAvisoDerivacion(`✅ "${nombreLimpio}" derivado a Entrevista.`, "ok");
+        if (yaEstabaEnCola) {
+          mostrarAvisoDerivacion(`ℹ️ "${nombreLimpio}" derivado (ya había otro igual en cola).`, "ok");
+        } else {
+          mostrarAvisoDerivacion(`✅ "${nombreLimpio}" derivado a Entrevista.`, "ok");
+        }
       }).catch(err => {
         console.error("Error al derivar:", err);
         mostrarAvisoDerivacion("❌ Error al derivar. Revisá la conexión.", "err");
       });
     }
-
     document.getElementById("btn-derivar").addEventListener("click", derivarAEntrevista);
     document.getElementById("derivar-nombre").addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
@@ -516,21 +518,24 @@
     });
 
     document.getElementById("btn-limpiar").addEventListener("click", () => {
-      const confirmar = confirm("¿Limpiar los llamados activos de la Tele y las colas pendientes de Entrevista y Extracción para iniciar la jornada? (El historial guardado NO se borrará)");
-      if (confirmar) {
-        Promise.all([
-          remove(ref(db, 'sectores')),
-          remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA)),
-          remove(ref(db, CONFIG.NODO_COLA_EXTRACCION))
-        ]).then(() => {
-          numeroUltimoGlobal = 0;
-          guardarCorrelativoLocal(0);
-          actualizarTextoProximoNumero();
-          alert("✅ Pantalla de la Tele y colas de Entrevista y Extracción limpias y listas.");
-        }).catch((err) => {
-          console.error("Error al limpiar:", err);
-        });
-      }
+      const confirmar1 = confirm("⚠️ PASO 1/2: ¿Limpiar los llamados activos de la Tele y las colas pendientes de Entrevista y Extracción para iniciar la jornada? (El historial guardado NO se borrará)");
+      if (!confirmar1) return;
+
+      const confirmar2 = confirm("⚠️ PASO 2/2 (CONFIRMACIÓN FINAL): ¿Estás seguro de borrar todos los turnos activos en pantalla y las colas de espera actuales?");
+      if (!confirmar2) return;
+
+      Promise.all([
+        remove(ref(db, 'sectores')),
+        remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA)),
+        remove(ref(db, CONFIG.NODO_COLA_EXTRACCION))
+      ]).then(() => {
+        numeroUltimoGlobal = 0;
+        guardarCorrelativoLocal(0);
+        actualizarTextoProximoNumero();
+        alert("✅ Pantalla de la Tele y colas de Entrevista y Extracción limpias y listas.");
+      }).catch((err) => {
+        console.error("Error al limpiar:", err);
+      });
     });
   </script>
 </body>
