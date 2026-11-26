@@ -29,9 +29,11 @@
     }
     h2 { color: #991b1b; margin: 0; font-size: 1.6rem; font-weight: 800; }
 
+    .estado-grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .estado-red { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; background: #e2e8f0; color: #475569; }
     .estado-online { background: #dcfce7; color: #166534; }
     .estado-offline { background: #fee2e2; color: #991b1b; }
+    .estado-sheet-err { font-size: 0.75rem; font-weight: bold; padding: 4px 9px; border-radius: 20px; background: #fef3c7; color: #92400e; display: none; }
 
     .ultimo-box {
       background: #fee2e2;
@@ -43,7 +45,14 @@
       cursor: pointer;
     }
     .ultimo-titulo { font-size: 0.8rem; text-transform: uppercase; color: #7f1d1d; font-weight: 800; }
-    .ultimo-valor { font-size: 1.6rem; font-weight: 900; color: #1a202c; margin: 4px 0; }
+    .ultimo-valor {
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: #1a202c;
+      margin: 4px 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .ultimo-detalle { font-size: 0.95rem; color: #450a0a; font-weight: 600; }
 
     .bandeja-aptos {
@@ -109,6 +118,8 @@
       font-weight: 800;
       font-size: 1.02rem;
       color: #111827;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .badge-tipo {
       font-size: 0.74rem;
@@ -117,6 +128,7 @@
       font-weight: 700;
       background: #e2e8f0;
       color: #334155;
+      flex-shrink: 0;
     }
     .btn-quitar {
       background: #f1f5f9;
@@ -126,6 +138,7 @@
       padding: 4px 8px;
       font-weight: 900;
       cursor: pointer;
+      flex-shrink: 0;
     }
 
     #btn-llamar-tanda {
@@ -141,12 +154,23 @@
       cursor: pointer;
       display: none;
     }
-    #btn-llamar-tanda:hover { background: #991b1b; }
+    #btn-llamar-tanda:hover:not(:disabled) { background: #991b1b; }
+    #btn-llamar-tanda:disabled { opacity: 0.6; cursor: not-allowed; }
 
     label { font-weight: 800; display: block; margin-bottom: 8px; font-size: 1.05rem; color: #2d3748; }
     .campo-grupo { margin-bottom: 16px; }
 
-    select, input[type="text"], input[type="password"] { 
+    .sector-fijo-box {
+      background: #fef2f2;
+      border: 2px solid #fecaca;
+      color: #991b1b;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    input[type="text"], input[type="password"] { 
       width: 100%; 
       padding: 14px; 
       font-size: 1.15rem; 
@@ -167,8 +191,9 @@
       font-weight: 900; 
       margin-top: 5px;
     }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
     #btn-llamar { background: #dc2626; color: white; }
-    #btn-llamar:hover { background: #b91c1c; }
+    #btn-llamar:hover:not(:disabled) { background: #b91c1c; }
     #btn-repetir { background: #ffc107; color: #212529; margin-top: 10px; }
 
     #login-overlay { 
@@ -196,7 +221,10 @@
     <div class="container">
       <div class="header-panel">
         <h2>Panel - Extracción</h2>
-        <span id="badge-conexion" class="estado-red">Conectando...</span>
+        <div class="estado-grupo">
+          <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
+          <span id="badge-conexion" class="estado-red">Conectando...</span>
+        </div>
       </div>
 
       <div class="bandeja-aptos" id="contenedor-bandeja" style="display: none;">
@@ -216,15 +244,8 @@
       </div>
 
       <div class="campo-grupo">
-        <label>Sector / Sillón:</label>
-        <select id="cons">
-          <option value="Sala de Extracción">Sala de Extracción</option>
-          <option value="Sillón 1">Sillón 1</option>
-          <option value="Sillón 2">Sillón 2</option>
-          <option value="Sillón 3">Sillón 3</option>
-          <option value="Sillón 4">Sillón 4</option>
-          <option value="Aféresis / Plaquetas">Aféresis / Plaquetas</option>
-        </select>
+        <label>Destino:</label>
+        <div class="sector-fijo-box" id="destino-fijo">Extracción</div>
       </div>
 
       <div class="campo-grupo">
@@ -245,10 +266,12 @@
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
       SECTOR_ACTUAL: "Extraccion",
+      DESTINO_TEXTO: "Extracción",
       NODO_SECTORES: "sectores",
       NODO_HISTORIAL: "historial",
       NODO_COLA_EXTRACCION: "cola_extraccion",
-      MAX_TANDA: 4
+      MAX_TANDA: 4,
+      ANTI_REBOTE_MS: 900
     };
 
     const firebaseConfig = {
@@ -264,13 +287,32 @@
     const db = getDatabase(app);
 
     const inputNombre = document.getElementById("id");
-    const selectCons = document.getElementById("cons");
+    const btnLlamar = document.getElementById("btn-llamar");
     const btnLlamarTanda = document.getElementById("btn-llamar-tanda");
     const avisoTopeTanda = document.getElementById("aviso-tope-tanda");
+
     let seleccionadosTanda = new Map();
     let idIndividualKey = null;
+    let nombreIndividualOriginal = "";
     let ultimoTextoExtraccion = null;
+    let bloqueadoPorRebote = false;
+    let fallosSheetsSesion = 0;
     let timerAvisoTope = null;
+
+    function capitalizarNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, letra => letra.toUpperCase());
+    }
+
+    function registrarFalloSheet() {
+      fallosSheetsSesion++;
+      const badge = document.getElementById("badge-sheet-err");
+      badge.style.display = "inline-block";
+      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
+    }
 
     function mostrarAvisoTope(mensaje) {
       avisoTopeTanda.textContent = mensaje || `⚠️ Máximo ${CONFIG.MAX_TANDA} personas por tanda para que se lea bien en la TV.`;
@@ -281,6 +323,17 @@
       }, 3000);
     }
 
+    function bloquearBotonesTemporalmente() {
+      bloqueadoPorRebote = true;
+      btnLlamar.disabled = true;
+      btnLlamarTanda.disabled = true;
+      setTimeout(() => {
+        bloqueadoPorRebote = false;
+        btnLlamar.disabled = false;
+        btnLlamarTanda.disabled = false;
+      }, CONFIG.ANTI_REBOTE_MS);
+    }
+
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
 
@@ -288,6 +341,7 @@
       if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
         document.getElementById("login-overlay").style.display = "none";
         document.getElementById("panel-contenido").style.display = "block";
+        inputNombre.focus();
       } else {
         alert("Contraseña incorrecta");
       }
@@ -326,6 +380,10 @@
         for (const k of seleccionadosTanda.keys()) {
           if (!data[k]) seleccionadosTanda.delete(k);
         }
+        if (idIndividualKey && !data[idIndividualKey]) {
+          idIndividualKey = null;
+          nombreIndividualOriginal = "";
+        }
         actualizarBotonTanda();
 
         contador.textContent = items.length;
@@ -333,12 +391,13 @@
 
         let html = "";
         items.forEach(([key, p]) => {
+          const nombreLimpio = capitalizarNombre(p.identificador || "");
           const checked = seleccionadosTanda.has(key) ? "checked" : "";
           const claseSel = seleccionadosTanda.has(key) ? "seleccionado-tanda" : "";
           html += `
             <div class="item-apto ${claseSel}" data-key="${key}">
-              <input type="checkbox" class="check-tanda" data-key="${key}" data-nombre="${p.identificador}" data-tipo="${p.tipo || ''}" ${checked}>
-              <div class="apto-info" data-key="${key}" data-nombre="${p.identificador}">${p.identificador}</div>
+              <input type="checkbox" class="check-tanda" data-key="${key}" data-nombre="${nombreLimpio}" data-tipo="${p.tipo || ''}" ${checked}>
+              <div class="apto-info" data-key="${key}" data-nombre="${nombreLimpio}">${nombreLimpio}</div>
               <span class="badge-tipo">${p.tipo || "Apto"}</span>
               <button type="button" class="btn-quitar" data-key="${key}" title="Quitar">✕</button>
             </div>
@@ -369,8 +428,10 @@
 
         document.querySelectorAll(".apto-info").forEach(el => {
           el.addEventListener("click", () => {
+            const nombreElegido = el.getAttribute("data-nombre");
             idIndividualKey = el.getAttribute("data-key");
-            inputNombre.value = el.getAttribute("data-nombre");
+            nombreIndividualOriginal = nombreElegido;
+            inputNombre.value = nombreElegido;
             inputNombre.focus();
           });
         });
@@ -379,12 +440,18 @@
           btn.addEventListener("click", () => {
             const k = btn.getAttribute("data-key");
             seleccionadosTanda.delete(k);
+            if (idIndividualKey === k) {
+              idIndividualKey = null;
+              nombreIndividualOriginal = "";
+            }
             actualizarBotonTanda();
             remove(ref(db, `${CONFIG.NODO_COLA_EXTRACCION}/${k}`));
           });
         });
       } else {
         seleccionadosTanda.clear();
+        idIndividualKey = null;
+        nombreIndividualOriginal = "";
         actualizarBotonTanda();
         contenedor.style.display = "none";
         listaHtml.innerHTML = "";
@@ -398,7 +465,7 @@
         const d = snapshot.val();
         ultimoTextoExtraccion = d.identificador || null;
         elDonante.textContent = d.identificador || "-";
-        elInfo.textContent = d.identificador ? (d.consultorio || "Sala de Extracción") : "Sin llamados activos";
+        elInfo.textContent = d.identificador ? (d.consultorio || CONFIG.DESTINO_TEXTO) : "Sin llamados activos";
       } else {
         ultimoTextoExtraccion = null;
         elDonante.textContent = "-";
@@ -413,18 +480,21 @@
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos)
-      }).catch(err => console.error(err));
+      }).catch(err => {
+        console.error(err);
+        registrarFalloSheet();
+      });
     }
 
     function emitirLlamadoExtraccion(textoMostrar, listaNombresIndividuales, keysABorrar = []) {
-      const cons = selectCons.value;
+      const destino = CONFIG.DESTINO_TEXTO;
       const ahora = new Date();
       const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
       const datosTv = {
         identificador: textoMostrar,
         sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: cons,
+        consultorio: destino,
         accion: "llamado",
         timestamp: Date.now()
       };
@@ -436,7 +506,7 @@
         const itemHist = {
           identificador: nombre,
           sector: CONFIG.SECTOR_ACTUAL,
-          consultorio: cons,
+          consultorio: destino,
           accion: "llamado",
           timestamp: Date.now()
         };
@@ -445,7 +515,7 @@
           fechaHora: fechaHoraStr,
           identificador: nombre,
           sector: CONFIG.SECTOR_ACTUAL,
-          consultorio: cons,
+          consultorio: destino,
           observacion: listaNombresIndividuales.length > 1 ? "Llamado en tanda" : ""
         });
       });
@@ -456,13 +526,15 @@
     }
 
     btnLlamarTanda.addEventListener("click", () => {
-      if (seleccionadosTanda.size === 0) return;
+      if (bloqueadoPorRebote || seleccionadosTanda.size === 0) return;
       if (seleccionadosTanda.size > CONFIG.MAX_TANDA) {
         mostrarAvisoTope();
         return;
       }
+
+      bloquearBotonesTemporalmente();
       const keys = Array.from(seleccionadosTanda.keys());
-      const nombres = Array.from(seleccionadosTanda.values()).map(v => v.identificador);
+      const nombres = Array.from(seleccionadosTanda.values()).map(v => capitalizarNombre(v.identificador));
       const textoTv = nombres.join(" • ");
 
       emitirLlamadoExtraccion(textoTv, nombres, keys);
@@ -470,19 +542,45 @@
       actualizarBotonTanda();
     });
 
-    document.getElementById("btn-llamar").addEventListener("click", () => {
+    function ejecutarLlamadoManual() {
+      if (bloqueadoPorRebote) return;
       const raw = inputNombre.value.trim();
       if (!raw) return alert("Escribí al menos un nombre.");
-      const nombres = raw.split(",").map(s => s.trim()).filter(Boolean);
-      if (nombres.length > CONFIG.MAX_TANDA) {
+
+      const partes = raw.split(",").map(s => capitalizarNombre(s)).filter(Boolean);
+      const nombresUnicos = Array.from(new Set(partes));
+
+      if (nombresUnicos.length > CONFIG.MAX_TANDA) {
         alert(`Podés llamar hasta ${CONFIG.MAX_TANDA} personas por tanda para que se lea bien en la TV.`);
         return;
       }
+
+      bloquearBotonesTemporalmente();
       const keys = idIndividualKey ? [idIndividualKey] : [];
 
-      emitirLlamadoExtraccion(nombres.join(" • "), nombres, keys);
+      emitirLlamadoExtraccion(nombresUnicos.join(" • "), nombresUnicos, keys);
       inputNombre.value = "";
       idIndividualKey = null;
+      nombreIndividualOriginal = "";
+      inputNombre.focus();
+    }
+
+    btnLlamar.addEventListener("click", ejecutarLlamadoManual);
+    inputNombre.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        ejecutarLlamadoManual();
+      }
+    });
+
+    inputNombre.addEventListener("input", () => {
+      if (
+        idIndividualKey &&
+        capitalizarNombre(inputNombre.value) !== capitalizarNombre(nombreIndividualOriginal)
+      ) {
+        idIndividualKey = null;
+        nombreIndividualOriginal = "";
+      }
     });
 
     function repetirExtraccion() {
@@ -491,7 +589,7 @@
         set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), {
           identificador: textoRepetir,
           sector: CONFIG.SECTOR_ACTUAL,
-          consultorio: selectCons.value,
+          consultorio: CONFIG.DESTINO_TEXTO,
           accion: "repetir",
           timestamp: Date.now()
         });
