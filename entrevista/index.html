@@ -51,6 +51,19 @@
     .ultimo-detalle { font-size: 1rem; color: #2d3748; font-weight: 600; }
     .ultimo-aviso { font-size: 0.8rem; color: #0066cc; margin-top: 6px; font-weight: bold; }
 
+    .aviso-pendiente-previo {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: center;
+      display: none;
+    }
+
     .bloque-resolucion {
       background: #eff6ff;
       border: 2px solid #93c5fd;
@@ -82,7 +95,7 @@
       font-weight: 900;
       cursor: pointer;
     }
-    .btn-apto:hover { background: #15803d; }
+    .btn-apto:hover:not(:disabled) { background: #15803d; }
     .btn-no-apto {
       background: #fee2e2;
       color: #991b1b;
@@ -93,7 +106,11 @@
       font-weight: 800;
       cursor: pointer;
     }
-    .btn-no-apto:hover { background: #fecaca; }
+    .btn-no-apto:hover:not(:disabled) { background: #fecaca; }
+    .btn-apto:disabled, .btn-no-apto:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
     .cartel-resuelto {
       border-radius: 10px;
@@ -343,6 +360,8 @@
         <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
       </div>
 
+      <div class="aviso-pendiente-previo" id="aviso-pendiente-previo"></div>
+
       <div class="bloque-resolucion" id="bloque-resolucion">
         <div class="resolucion-titulo" id="resolucion-nombre">Resultado de Entrevista</div>
         <div class="resolucion-botones">
@@ -398,8 +417,10 @@
       NODO_COLA_ENTREVISTA: "cola_entrevista",
       NODO_COLA_EXTRACCION: "cola_extraccion",
       ANTI_REBOTE_MS: 900,
+      ANTI_DOBLE_RESOLUCION_MS: 1000,
       DURACION_CARTEL_RESUELTO_MS: 3000,
       STORAGE_KEY_CONSULTORIO: "fuhesa_entrevista_cons",
+      STORAGE_KEY_ESTADO_BOX: "fuhesa_entrevista_estado_box_v1",
       PRIORIDAD_TIPO: {
         "Plaquetas": 1,
         "Club de Donantes": 2,
@@ -413,22 +434,101 @@
     const selectTipoAtencion = document.getElementById("tipo-atencion");
     const errorAviso = document.getElementById("error-aviso");
     const bloqueRes = document.getElementById("bloque-resolucion");
+    const btnPasarExtraccion = document.getElementById("btn-pasar-extraccion");
+    const btnNoApto = document.getElementById("btn-no-apto");
     const cartelResuelto = document.getElementById("cartel-resuelto");
+    const avisoPendientePrevio = document.getElementById("aviso-pendiente-previo");
 
     let bloqueadoPorRebote = false;
-    let ultimoLlamadoLocal = null;
+    let bloqueadoResolucion = false;
+    let ultimoGlobalSector = null;
+    let ultimoLlamadoPropio = null;
     let idPendienteActualFirebaseKey = null;
-    let timestampResuelto = null;
+    let nombrePendienteSeleccionadoOriginal = "";
+    let resuetosPorConsultorio = {};
     let fallosSheetsSesion = 0;
     let timerCartelResuelto = null;
 
-    const consultorioGuardado = localStorage.getItem(CONFIG.STORAGE_KEY_CONSULTORIO);
-    if (consultorioGuardado) {
-      selectConsultorio.value = consultorioGuardado;
+    function obtenerFechaHoyLocal() {
+      const hoy = new Date();
+      const y = hoy.getFullYear();
+      const m = String(hoy.getMonth() + 1).padStart(2, "0");
+      const d = String(hoy.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
     }
-    selectConsultorio.addEventListener("change", () => {
-      localStorage.setItem(CONFIG.STORAGE_KEY_CONSULTORIO, selectConsultorio.value);
-    });
+
+    function cargarEstadoLocalBox() {
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_ESTADO_BOX);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.fecha === obtenerFechaHoyLocal()) {
+          resuetosPorConsultorio = parsed.resueltos || {};
+          const consActual = selectConsultorio.value;
+          if (parsed.porConsultorio && parsed.porConsultorio[consActual]) {
+            ultimoLlamadoPropio = parsed.porConsultorio[consActual];
+          }
+        }
+      } catch (err) {
+        console.warn("No se pudo cargar estado local de Entrevista:", err);
+      }
+    }
+
+    function guardarLlamadoPropioLocal(datos) {
+      try {
+        const hoy = obtenerFechaHoyLocal();
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_ESTADO_BOX);
+        let parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || parsed.fecha !== hoy) {
+          parsed = { fecha: hoy, porConsultorio: {}, resueltos: {} };
+        }
+        parsed.porConsultorio = parsed.porConsultorio || {};
+        parsed.porConsultorio[datos.consultorio] = datos;
+        parsed.resueltos = resuetosPorConsultorio;
+        localStorage.setItem(CONFIG.STORAGE_KEY_ESTADO_BOX, JSON.stringify(parsed));
+      } catch (err) {
+        console.warn("No se pudo guardar llamado propio en localStorage:", err);
+      }
+    }
+
+    function guardarResueltoLocal(consultorio, timestamp) {
+      if (!consultorio || !timestamp) return;
+      resuetosPorConsultorio[consultorio] = timestamp;
+      try {
+        const hoy = obtenerFechaHoyLocal();
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_ESTADO_BOX);
+        let parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || parsed.fecha !== hoy) {
+          parsed = { fecha: hoy, porConsultorio: {}, resueltos: {} };
+        }
+        parsed.resueltos = resuetosPorConsultorio;
+        localStorage.setItem(CONFIG.STORAGE_KEY_ESTADO_BOX, JSON.stringify(parsed));
+      } catch (err) {
+        console.warn("No se pudo guardar resuelto en localStorage:", err);
+      }
+    }
+
+    function estaResueltoEnConsultorio(consultorio, timestamp) {
+      if (!consultorio || !timestamp) return false;
+      return resuetosPorConsultorio[consultorio] === timestamp;
+    }
+
+    function bloquearBotonesResolucionTemporalmente() {
+      bloqueadoResolucion = true;
+      btnPasarExtraccion.disabled = true;
+      btnNoApto.disabled = true;
+      setTimeout(() => {
+        bloqueadoResolucion = false;
+        btnPasarExtraccion.disabled = false;
+        btnNoApto.disabled = false;
+      }, CONFIG.ANTI_DOBLE_RESOLUCION_MS);
+    }
+
+    function limpiarSeleccionPendiente() {
+      idPendienteActualFirebaseKey = null;
+      nombrePendienteSeleccionadoOriginal = "";
+      renderizarEstadoSeleccion();
+    }
 
     function obtenerPesoPrioridad(tipo) {
       return CONFIG.PRIORIDAD_TIPO[tipo] || 99;
@@ -464,19 +564,64 @@
       }, CONFIG.DURACION_CARTEL_RESUELTO_MS);
     }
 
-    function sincronizarVisibilidadResolucion(datos) {
+    function actualizarAvisoPendientePrevio(nombreAnterior) {
+      if (nombreAnterior) {
+        avisoPendientePrevio.textContent = `ℹ️ Quedó "${nombreAnterior}" sin marcar Apto / No Apto antes de llamar a otro.`;
+        avisoPendientePrevio.style.display = "block";
+      } else {
+        avisoPendientePrevio.style.display = "none";
+        avisoPendientePrevio.textContent = "";
+      }
+    }
+
+    function sincronizarConsultorioActivo() {
+      const consActual = selectConsultorio.value;
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_ESTADO_BOX);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && parsed.fecha === obtenerFechaHoyLocal() && parsed.porConsultorio && parsed.porConsultorio[consActual]) {
+          ultimoLlamadoPropio = parsed.porConsultorio[consActual];
+        } else if (ultimoGlobalSector && ultimoGlobalSector.consultorio === consActual) {
+          ultimoLlamadoPropio = ultimoGlobalSector;
+        } else {
+          ultimoLlamadoPropio = null;
+        }
+      } catch (err) {
+        ultimoLlamadoPropio = (ultimoGlobalSector && ultimoGlobalSector.consultorio === consActual) ? ultimoGlobalSector : null;
+      }
+
+      sincronizarVisibilidadResolucion();
+    }
+
+    function sincronizarVisibilidadResolucion() {
       const tituloRes = document.getElementById("resolucion-nombre");
-      if (!datos || !datos.identificador) {
+      const consActual = selectConsultorio.value;
+      const objetivo = ultimoLlamadoPropio;
+
+      if (!objetivo || !objetivo.identificador) {
         bloqueRes.style.display = "none";
         return;
       }
-      if (datos.timestamp && datos.timestamp === timestampResuelto) {
+      if (estaResueltoEnConsultorio(consActual, objetivo.timestamp)) {
         bloqueRes.style.display = "none";
         return;
       }
-      tituloRes.textContent = `¿Resultado para ${datos.identificador}?`;
+      tituloRes.textContent = `¿Resultado para ${objetivo.identificador}? (${consActual})`;
       bloqueRes.style.display = "block";
     }
+
+    const consultorioGuardado = localStorage.getItem(CONFIG.STORAGE_KEY_CONSULTORIO);
+    if (consultorioGuardado) {
+      selectConsultorio.value = consultorioGuardado;
+    }
+    cargarEstadoLocalBox();
+    sincronizarVisibilidadResolucion();
+
+    selectConsultorio.addEventListener("change", () => {
+      localStorage.setItem(CONFIG.STORAGE_KEY_CONSULTORIO, selectConsultorio.value);
+      avisoPendientePrevio.style.display = "none";
+      sincronizarConsultorioActivo();
+    });
 
     document.getElementById("btn-login").addEventListener("click", verificarClave);
     document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
@@ -531,6 +676,7 @@
 
         if (idPendienteActualFirebaseKey && !data[idPendienteActualFirebaseKey]) {
           idPendienteActualFirebaseKey = null;
+          nombrePendienteSeleccionadoOriginal = "";
         }
         
         contador.textContent = items.length;
@@ -568,8 +714,10 @@
         document.querySelectorAll(".item-seleccionar-zona").forEach(zona => {
           zona.addEventListener("click", () => {
             const card = zona.closest(".item-pendiente");
+            const nombreElegido = card.getAttribute("data-nombre");
             idPendienteActualFirebaseKey = card.getAttribute("data-key");
-            inputNombre.value = card.getAttribute("data-nombre");
+            nombrePendienteSeleccionadoOriginal = nombreElegido;
+            inputNombre.value = nombreElegido;
             selectTipoAtencion.value = card.getAttribute("data-tipo");
             if (errorAviso.style.display === "block") {
               errorAviso.style.display = "none";
@@ -587,6 +735,7 @@
             if (confirm(`¿Quitar a "${nombreQuitar}" de la lista de pendientes sin llamar?`)) {
               if (idPendienteActualFirebaseKey === keyQuitar) {
                 idPendienteActualFirebaseKey = null;
+                nombrePendienteSeleccionadoOriginal = "";
               }
               remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${keyQuitar}`)).catch(err => console.error(err));
             }
@@ -595,6 +744,7 @@
 
       } else {
         idPendienteActualFirebaseKey = null;
+        nombrePendienteSeleccionadoOriginal = "";
         contenedorBandeja.style.display = "none";
         listaHtml.innerHTML = "";
       }
@@ -629,19 +779,26 @@
 
       if (snapshot.exists()) {
         const datos = snapshot.val();
-        ultimoLlamadoLocal = datos;
+        ultimoGlobalSector = datos;
         const hora = formatearHoraCorta(datos.timestamp);
         const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : '';
         elDonante.textContent = datos.identificador || "-";
         elInfo.textContent = datos.identificador
           ? `${datos.consultorio}${etiquetaTipo}${hora ? ' • ' + hora + ' hs' : ''}`
           : "Sin llamados activos";
-        sincronizarVisibilidadResolucion(datos);
+
+        if (datos.consultorio === selectConsultorio.value) {
+          ultimoLlamadoPropio = datos;
+          guardarLlamadoPropioLocal(datos);
+        }
+        sincronizarVisibilidadResolucion();
       } else {
-        ultimoLlamadoLocal = null;
+        ultimoGlobalSector = null;
+        ultimoLlamadoPropio = null;
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
         bloqueRes.style.display = "none";
+        avisoPendientePrevio.style.display = "none";
       }
     });
 
@@ -658,17 +815,26 @@
       });
     }
 
-    document.getElementById("btn-pasar-extraccion").addEventListener("click", () => {
-      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
+    btnPasarExtraccion.addEventListener("click", () => {
+      if (bloqueadoResolucion) return;
+      const consActual = selectConsultorio.value;
+      const objetivo = ultimoLlamadoPropio || (ultimoGlobalSector && ultimoGlobalSector.consultorio === consActual ? ultimoGlobalSector : null);
+      if (!objetivo || !objetivo.identificador) return;
+      if (estaResueltoEnConsultorio(consActual, objetivo.timestamp)) {
+        bloqueRes.style.display = "none";
+        return;
+      }
 
-      const nombreResuelto = ultimoLlamadoLocal.identificador;
-      timestampResuelto = ultimoLlamadoLocal.timestamp || Date.now();
+      bloquearBotonesResolucionTemporalmente();
+      const nombreResuelto = objetivo.identificador;
+      guardarResueltoLocal(consActual, objetivo.timestamp || Date.now());
       bloqueRes.style.display = "none";
+      avisoPendientePrevio.style.display = "none";
 
       const datosExtraccion = {
         identificador: nombreResuelto,
-        tipo: ultimoLlamadoLocal.tipo || "Sin Turno",
-        origenConsultorio: ultimoLlamadoLocal.consultorio || "",
+        tipo: objetivo.tipo || "Sin Turno",
+        origenConsultorio: objetivo.consultorio || consActual,
         timestamp: Date.now()
       };
 
@@ -679,12 +845,21 @@
       });
     });
 
-    document.getElementById("btn-no-apto").addEventListener("click", () => {
-      if (!ultimoLlamadoLocal || !ultimoLlamadoLocal.identificador) return;
+    btnNoApto.addEventListener("click", () => {
+      if (bloqueadoResolucion) return;
+      const consActual = selectConsultorio.value;
+      const objetivo = ultimoLlamadoPropio || (ultimoGlobalSector && ultimoGlobalSector.consultorio === consActual ? ultimoGlobalSector : null);
+      if (!objetivo || !objetivo.identificador) return;
+      if (estaResueltoEnConsultorio(consActual, objetivo.timestamp)) {
+        bloqueRes.style.display = "none";
+        return;
+      }
 
-      const nombreResuelto = ultimoLlamadoLocal.identificador;
-      timestampResuelto = ultimoLlamadoLocal.timestamp || Date.now();
+      bloquearBotonesResolucionTemporalmente();
+      const nombreResuelto = objetivo.identificador;
+      guardarResueltoLocal(consActual, objetivo.timestamp || Date.now());
       bloqueRes.style.display = "none";
+      avisoPendientePrevio.style.display = "none";
 
       const ahora = new Date();
       const timestampAhora = Date.now();
@@ -693,8 +868,8 @@
       push(ref(db, CONFIG.NODO_HISTORIAL), {
         identificador: nombreResuelto,
         sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: ultimoLlamadoLocal.consultorio || "",
-        tipo: ultimoLlamadoLocal.tipo || "",
+        consultorio: objetivo.consultorio || consActual,
+        tipo: objetivo.tipo || "",
         accion: "no_apto",
         estado: "No Apto",
         timestamp: timestampAhora
@@ -704,7 +879,7 @@
         fechaHora: fechaHoraStr,
         identificador: nombreResuelto,
         sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: `${ultimoLlamadoLocal.consultorio} (${ultimoLlamadoLocal.tipo || ""})`,
+        consultorio: `${objetivo.consultorio || consActual} (${objetivo.tipo || ""})`,
         observacion: "No Apto / Diferido en Entrevista"
       });
 
@@ -724,6 +899,16 @@
         return;
       }
       errorAviso.style.display = "none";
+
+      if (
+        ultimoLlamadoPropio &&
+        ultimoLlamadoPropio.identificador &&
+        !estaResueltoEnConsultorio(c, ultimoLlamadoPropio.timestamp)
+      ) {
+        actualizarAvisoPendientePrevio(ultimoLlamadoPropio.identificador);
+      } else {
+        avisoPendientePrevio.style.display = "none";
+      }
 
       const i = capitalizarNombre(rawNombre);
 
@@ -753,7 +938,9 @@
       };
 
       cartelResuelto.style.display = "none";
-      ultimoLlamadoLocal = datosLlamado;
+      ultimoLlamadoPropio = datosLlamado;
+      guardarLlamadoPropioLocal(datosLlamado);
+      sincronizarVisibilidadResolucion();
 
       set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
         inputNombre.value = "";
@@ -764,6 +951,7 @@
       if (idPendienteActualFirebaseKey) {
         remove(ref(db, `${CONFIG.NODO_COLA_ENTREVISTA}/${idPendienteActualFirebaseKey}`)).catch(err => console.error(err));
         idPendienteActualFirebaseKey = null;
+        nombrePendienteSeleccionadoOriginal = "";
       }
 
       push(ref(db, CONFIG.NODO_HISTORIAL), datosLlamado);
@@ -777,8 +965,9 @@
     }
 
     function repetirLlamado() {
-      if (ultimoLlamadoLocal) {
-        const datosRepetir = { ...ultimoLlamadoLocal, accion: "repetir", timestamp: Date.now() };
+      const baseRepetir = ultimoLlamadoPropio || ultimoGlobalSector;
+      if (baseRepetir && baseRepetir.identificador) {
+        const datosRepetir = { ...baseRepetir, accion: "repetir", timestamp: Date.now() };
         set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosRepetir);
         push(ref(db, CONFIG.NODO_HISTORIAL), datosRepetir);
         animarFeedbackRepetir();
@@ -818,6 +1007,12 @@
     inputNombre.addEventListener("input", () => {
       if (errorAviso.style.display === "block") {
         errorAviso.style.display = "none";
+      }
+      if (
+        idPendienteActualFirebaseKey &&
+        capitalizarNombre(inputNombre.value) !== capitalizarNombre(nombrePendienteSeleccionadoOriginal)
+      ) {
+        limpiarSeleccionPendiente();
       }
     });
   </script>
