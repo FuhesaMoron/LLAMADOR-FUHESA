@@ -3,318 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panel Recepción - Fu.He.Sa</title>
+  <title>Panel Recepción - FU.HE.SA</title>
   <style>
-    :root {
-      --bg-page: linear-gradient(145deg, #e2e8f0 0%, #f1f5f9 55%, #e6eef8 100%);
-      --card-bg: #ffffff;
-      --ink-main: #0f172a;
-      --ink-muted: #475569;
-      --accent-blue: #1d4ed8;
-      --accent-blue-dark: #1e40af;
-      --border-soft: #cbd5e1;
-      --shadow-card: 0 14px 34px rgba(15, 23, 42, 0.08);
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 22px; max-width: 420px; margin: auto; background: #f8f9fa; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 15px; }
+    .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+    h2 { color: #1e3a8a; margin: 0; font-size: 1.4rem; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      padding: 18px;
-      max-width: 500px;
-      margin: auto;
-      background: var(--bg-page);
-      min-height: 100vh;
-      box-sizing: border-box;
-      color: var(--ink-main);
-    }
-
-    .container {
-      background: var(--card-bg);
-      padding: 24px;
-      border-radius: 20px;
-      box-shadow: var(--shadow-card);
-      border: 1px solid rgba(203, 213, 225, 0.75);
-      margin-top: 8px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .container::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 5px;
-      background: linear-gradient(90deg, #1e3a8a, #2563eb, #0ea5e9);
-    }
-
-    .header-panel {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
-      padding-top: 4px;
-      gap: 10px;
-    }
-
-    h2 {
-      color: #1e3a8a;
-      margin: 0;
-      font-size: 1.65rem;
-      font-weight: 900;
-      letter-spacing: -0.3px;
-    }
-
-    .estado-grupo {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .estado-red {
-      font-size: 0.8rem;
-      font-weight: 800;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #e2e8f0;
-      color: #475569;
-      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
-    }
-    .estado-online {
-      background: #dcfce7;
-      color: #166534;
-      box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.25);
-    }
-    .estado-offline {
-      background: #fee2e2;
-      color: #991b1b;
-      box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.25);
-    }
-    .estado-sheet-err {
-      font-size: 0.75rem;
-      font-weight: 800;
-      padding: 5px 10px;
-      border-radius: 999px;
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d;
-      display: none;
-    }
+    .estado-grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .estado-red { font-size: 0.78rem; font-weight: bold; padding: 4px 10px; border-radius: 20px; background: #e2e8f0; color: #475569; }
+    .estado-online { background: #dcfce7; color: #166534; }
+    .estado-offline { background: #fee2e2; color: #991b1b; }
+    .estado-sheet-err { font-size: 0.72rem; font-weight: bold; padding: 4px 8px; border-radius: 20px; background: #fef3c7; color: #92400e; display: none; }
 
     .ultimo-box {
-      background: linear-gradient(135deg, #eff6ff 0%, #e2e8f0 100%);
-      border-left: 6px solid #1d4ed8;
-      border-top: 1px solid #dbeafe;
-      border-right: 1px solid #dbeafe;
-      border-bottom: 1px solid #cbd5e1;
-      padding: 16px;
-      border-radius: 14px;
-      margin-bottom: 18px;
+      background: #e9ecef;
+      border-left: 5px solid #1e3a8a;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-bottom: 14px;
       text-align: center;
-      cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
-      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08);
     }
-    .ultimo-box:hover {
-      box-shadow: 0 6px 16px rgba(29, 78, 216, 0.14);
+    .ultimo-titulo { font-size: 0.75rem; text-transform: uppercase; color: #555; font-weight: bold; letter-spacing: 0.5px; }
+    .ultimo-valor { font-size: 1.45rem; font-weight: 900; color: #111; margin: 2px 0; }
+    .ultimo-detalle { font-size: 0.85rem; color: #444; }
+
+    label { font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem; color: #333; }
+    select, input { width: 100%; padding: 9px; font-size: 1rem; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; background: white; }
+    
+    button { width: 100%; padding: 11px; border: none; font-size: 1.05rem; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .fila-correlativo { display: flex; gap: 8px; margin-top: 14px; }
+    #btn-siguiente { background: #28a745; color: white; flex: 2.3; font-size: 1.1rem; }
+    #btn-siguiente:hover:not(:disabled) { background: #218838; }
+    #btn-config-num { background: #6c757d; color: white; flex: 1; font-size: 0.85rem; padding: 6px; }
+    #btn-config-num:hover { background: #5a6268; }
+
+    #btn-llamar { background: #007bff; color: white; margin-top: 10px; font-size: 1rem; }
+    #btn-llamar:hover:not(:disabled) { background: #0056b3; }
+    
+    #btn-repetir { background: #ffc107; color: #212529; margin-top: 8px; font-size: 0.95rem; }
+    #btn-repetir:hover { background: #e0a800; }
+
+    .seccion-derivacion {
+      background: #eff6ff;
+      border: 2px dashed #93c5fd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      margin-bottom: 12px;
     }
-    .ultimo-box:active {
-      transform: scale(0.985);
-    }
-    .ultimo-titulo {
-      font-size: 0.78rem;
+    .seccion-derivacion h3 {
+      font-size: 0.95rem;
+      color: #1e40af;
+      margin: 0 0 8px 0;
       text-transform: uppercase;
-      color: #475569;
-      font-weight: 800;
-      letter-spacing: 0.7px;
+      letter-spacing: 0.5px;
     }
-    .ultimo-valor {
-      font-size: 1.9rem;
-      font-weight: 900;
-      color: #0f172a;
-      margin: 4px 0;
-    }
-    .ultimo-detalle {
-      font-size: 0.98rem;
+    .ayuda-formato {
+      font-size: 0.78rem;
       color: #334155;
-      font-weight: 700;
+      margin: 0 0 8px 0;
     }
-    .ultimo-aviso {
-      font-size: 0.8rem;
-      color: #1d4ed8;
-      margin-top: 7px;
-      font-weight: 800;
-    }
-
-    label {
-      font-weight: 800;
-      display: block;
-      margin-bottom: 8px;
-      font-size: 1rem;
-      color: #1e293b;
-    }
-
-    .campo-grupo {
-      margin-bottom: 16px;
-    }
-
-    select, input[type="text"], input[type="number"], input[type="password"] {
-      width: 100%;
-      padding: 14px 15px;
-      font-size: 1.15rem;
-      box-sizing: border-box;
-      border: 2px solid var(--border-soft);
-      border-radius: 12px;
-      background: #f8fafc;
-      color: var(--ink-main);
-      font-weight: 600;
-      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--accent-blue);
-      outline: none;
-      background: #ffffff;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-    }
-
-    .btn-principal {
-      width: 100%;
-      padding: 17px;
-      border: none;
-      font-size: 1.22rem;
-      border-radius: 14px;
-      cursor: pointer;
-      font-weight: 900;
-      transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease;
-      margin-top: 6px;
-      letter-spacing: 0.2px;
-    }
-    .btn-principal:active:not(:disabled) {
-      transform: scale(0.985);
-    }
-    .btn-principal:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
-
-    #btn-llamar {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      color: white;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
-    }
-    #btn-llamar:hover:not(:disabled) {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    }
-
-    #btn-repetir {
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      color: #1e293b;
-      box-shadow: 0 5px 14px rgba(245, 158, 11, 0.24);
-      margin-top: 11px;
-    }
-    #btn-repetir:hover:not(:disabled) {
-      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    }
-
     #btn-derivar {
-      background: #f0fdf4;
-      color: #166534;
-      border: 2px solid #86efac;
-      box-shadow: 0 3px 10px rgba(22, 163, 74, 0.08);
-      margin-top: 11px;
+      background: #10b981;
+      color: white;
+      margin-top: 10px;
+      font-size: 1rem;
     }
-    #btn-derivar:hover:not(:disabled) {
-      background: #dcfce7;
-      border-color: #4ade80;
-    }
+    #btn-derivar:hover:not(:disabled) { background: #059669; }
 
-    .cartel-estado {
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-top: 12px;
-      font-size: 0.9rem;
-      font-weight: 800;
+    .aviso-derivacion {
+      margin-top: 8px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 700;
       text-align: center;
       display: none;
     }
-    .cartel-estado.ok {
+    .aviso-derivacion.ok {
       background: #dcfce7;
       color: #166534;
       border: 1px solid #86efac;
+      display: block;
     }
-    .cartel-estado.aviso {
-      background: #fffbeb;
-      color: #92400e;
-      border: 1px solid #fcd34d;
-    }
-
-    #error-aviso {
+    .aviso-derivacion.err {
+      background: #fee2e2;
       color: #991b1b;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      padding: 11px 12px;
-      border-radius: 10px;
-      font-weight: 800;
-      font-size: 0.94rem;
-      text-align: center;
-      margin-bottom: 12px;
-      display: none;
+      border: 1px solid #fca5a5;
+      display: block;
     }
 
-    #login-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-page);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .login-box {
-      background: white;
-      padding: 36px 30px;
-      border-radius: 20px;
-      box-shadow: var(--shadow-card);
-      border: 1px solid rgba(203, 213, 225, 0.8);
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-    }
-    .login-box h2 {
-      margin-bottom: 6px;
-    }
-    .login-box input {
-      margin-top: 14px;
-      margin-bottom: 18px;
-      text-align: center;
-    }
-    .login-box button {
-      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-      color: white;
-      width: 100%;
-      padding: 14px;
-      font-size: 1.15rem;
-      border-radius: 12px;
-      border: none;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 5px 14px rgba(22, 163, 74, 0.25);
-    }
-    .error-msg {
-      color: #dc2626;
-      font-size: 0.95rem;
+    .atajos-info {
+      background: #eef2f6;
+      border-radius: 6px;
+      padding: 8px 10px;
       margin-top: 10px;
-      font-weight: 800;
-      display: none;
+      font-size: 0.78rem;
+      color: #495057;
+      text-align: center;
+      line-height: 1.4;
     }
+    
+    .separador { border: 0; border-top: 1px solid #dee2e6; margin: 12px 0 10px 0; }
+    #btn-limpiar { background: #dc3545; color: white; font-size: 0.88rem; padding: 9px; }
+    #btn-limpiar:hover { background: #b02a37; }
+
+    #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; display: flex; justify-content: center; align-items: center; z-index: 999; }
+    .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+    .login-box input { margin-top: 10px; margin-bottom: 15px; }
+    .login-box button { background: #28a745; color: white; }
+    .error-msg { color: #dc3545; font-size: 0.9rem; margin-top: 5px; display: none; }
   </style>
 </head>
 <body>
@@ -322,7 +122,7 @@
   <div id="login-overlay">
     <div class="login-box">
       <h2>Acceso Recepción</h2>
-      <p style="font-size: 0.98rem; color: #475569; margin: 0;">Ingresá la clave del sector:</p>
+      <p style="font-size: 0.9rem; color: #666;">Ingresá la clave del sector:</p>
       <input type="password" id="input-password" placeholder="Contraseña">
       <button id="btn-login">Entrar</button>
       <div id="error-password" class="error-msg">Contraseña incorrecta</div>
@@ -330,71 +130,175 @@
   </div>
 
   <div id="panel-contenido" style="display: none;">
-    <div class="container">
-      <div class="header-panel">
-        <h2>Panel - Recepción</h2>
-        <div class="estado-grupo">
-          <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
-          <span id="badge-conexion" class="estado-red">Conectando...</span>
-        </div>
+    <div class="header-panel">
+      <h2>Panel - Recepción</h2>
+      <div class="estado-grupo">
+        <span id="badge-sheet-err" class="estado-sheet-err" title="Error al enviar registro a Google Sheets">⚠ Planilla</span>
+        <span id="badge-conexion" class="estado-red">Conectando...</span>
       </div>
-
-      <div class="ultimo-box" id="box-repetir-tactil" title="Tocá aquí para repetir">
-        <div class="ultimo-titulo">Último llamado en Recepción</div>
-        <div class="ultimo-valor" id="ultimo-donante">-</div>
-        <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
-        <div class="ultimo-aviso">🔄 (Tocá acá para repetir el audio)</div>
-      </div>
-
-      <div class="campo-grupo">
-        <label for="cons">Puesto / Box:</label>
-        <select id="cons">
-          <option value="Recepción 1">Recepción 1</option>
-          <option value="Recepción 2">Recepción 2</option>
-          <option value="Mostrador Principal">Mostrador Principal</option>
-        </select>
-      </div>
-
-      <div class="campo-grupo">
-        <label for="tipo-atencion">Tipo de Atención:</label>
-        <select id="tipo-atencion">
-          <option value="Sin Turno" selected>Sin Turno</option>
-          <option value="Club de Donantes">Club de Donantes (Prioridad)</option>
-          <option value="Plaquetas">Plaquetas</option>
-          <option value="Turno">Turno</option>
-        </select>
-      </div>
-
-      <div class="campo-grupo">
-        <label for="id">Turno o Nombre del Donante:</label>
-        <input type="text" id="id" placeholder="Ej: 15 o Juan Pérez" autocomplete="off" autocapitalize="words">
-      </div>
-
-      <div id="error-aviso">⚠️ Por favor, ingresá un turno o nombre del donante.</div>
-
-      <button id="btn-llamar" class="btn-principal">📢 LLAMAR A RECEPCIÓN</button>
-      <button id="btn-repetir" class="btn-principal">🔄 REPETIR ÚLTIMO LLAMADO</button>
-      <button type="button" id="btn-derivar" class="btn-principal">➡️ PASAR A ENTREVISTA</button>
-
-      <div class="cartel-estado" id="cartel-estado"></div>
     </div>
+
+    <div class="ultimo-box">
+      <div class="ultimo-titulo">Último llamado en Recepción</div>
+      <div class="ultimo-valor" id="ultimo-donante">-</div>
+      <div class="ultimo-detalle" id="ultimo-info">Sin llamados activos</div>
+    </div>
+    
+    <label>Box de Recepción:</label>
+    <select id="cons">
+      <option value="Box 1">Box 1</option>
+      <option value="Box 2">Box 2</option>
+    </select>
+
+    <div class="fila-correlativo">
+      <button id="btn-siguiente">➕ Siguiente (<span id="prox-num">01</span>)</button>
+      <button id="btn-config-num" title="Cambiar número inicial">✏️ Cambiar</button>
+    </div>
+
+    <label style="margin-top: 12px;">O Nombre / Número Libre:</label>
+    <input type="text" id="id" placeholder="Ej: 014 o Juan Pérez (Enter para llamar)">
+    
+    <button id="btn-llamar">Llamar Donante (Escrito)</button>
+    <button id="btn-repetir">📢 Repetir Último Llamado</button>
+
+    <div class="seccion-derivacion">
+      <h3>➡️ Derivar a Entrevista</h3>
+      <p class="ayuda-formato">Formato uniforme: <b>Nombre y Apellido</b> (ej: Juan Pérez)</p>
+      
+      <label style="font-size: 0.85rem; margin-bottom: 3px;">Tipo de Atención:</label>
+      <select id="derivar-tipo" style="margin-bottom: 8px;">
+        <option value="Sin Turno" selected>Sin Turno</option>
+        <option value="Club de Donantes">Club de Donantes (Prioridad)</option>
+        <option value="Plaquetas">Plaquetas</option>
+        <option value="Turno">Turno</option>
+      </select>
+
+      <label style="font-size: 0.85rem; margin-bottom: 3px;">Nombre y Apellido del Donante:</label>
+      <input type="text" id="derivar-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
+
+      <button id="btn-derivar">📤 Enviar a Entrevista</button>
+      <div id="aviso-derivacion" class="aviso-derivacion"></div>
+    </div>
+
+    <div class="atajos-info">
+      ⌨️ <b>Atajos:</b> <b>Enter/Espacio</b> = Siguiente | <b>Enter</b> en texto = Llamar | <b>Alt+R</b> = Repetir<br>
+      🖥️ <b>Puesto:</b> 1 sola pestaña abierta • Revisá <b>Siguiente</b> antes del atajo
+    </div>
+
+    <hr class="separador">
+    <button id="btn-limpiar">🧹 Limpiar Tele y Cola (Inicio de Jornada)</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, get, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const CONFIG = {
       CLAVE_SECRETA: "fuhesa2026",
       WEBHOOK_URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbyx-6YK29x6kjjkYadzEpxH5KukkehA8gd7v6b-BAbEUgJqadtzsIm8rekHwmuNRJTUYQ/exec",
       SECTOR_ACTUAL: "Recepcion",
-      NODO_SECTORES: "sectores",
-      NODO_HISTORIAL: "historial",
       NODO_COLA_ENTREVISTA: "cola_entrevista",
-      ANTI_REBOTE_MS: 900,
-      DURACION_CARTEL_MS: 2800,
-      STORAGE_KEY_PUESTO: "fuhesa_recepcion_puesto"
+      NODO_COLA_EXTRACCION: "cola_extraccion",
+      ANTI_REBOTE_MS: 800,
+      AVISO_DURACION_MS: 2200,
+      STORAGE_KEY_CORRELATIVO: "fuhesa_recepcion_correlativo_v1"
     };
+
+    let numeroUltimoGlobal = 0;
+    let bloqueadoPorRebote = false;
+    let timerAvisoDerivacion = null;
+    let colaEntrevistaActual = {};
+    let fallosSheetsSesion = 0;
+
+    function obtenerFechaHoyLocal() {
+      const hoy = new Date();
+      const y = hoy.getFullYear();
+      const m = String(hoy.getMonth() + 1).padStart(2, "0");
+      const d = String(hoy.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatearNumero(num) {
+      return String(num % 100).padStart(2, '0');
+    }
+
+    function actualizarTextoProximoNumero() {
+      document.getElementById("prox-num").textContent = formatearNumero(numeroUltimoGlobal + 1);
+    }
+
+    function guardarCorrelativoLocal(num) {
+      try {
+        localStorage.setItem(CONFIG.STORAGE_KEY_CORRELATIVO, JSON.stringify({
+          fecha: obtenerFechaHoyLocal(),
+          ultimo: num
+        }));
+      } catch (err) {
+        console.warn("No se pudo guardar correlativo en localStorage:", err);
+      }
+    }
+
+    function cargarCorrelativoLocal() {
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY_CORRELATIVO);
+        if (!raw) return 0;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.fecha === obtenerFechaHoyLocal() && typeof parsed.ultimo === "number") {
+          return parsed.ultimo;
+        }
+        return 0;
+      } catch (err) {
+        return 0;
+      }
+    }
+
+    function normalizarClaveNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    }
+
+    function capitalizarNombre(texto) {
+      return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, letra => letra.toUpperCase());
+    }
+
+    function mostrarAvisoDerivacion(mensaje, tipo) {
+      const aviso = document.getElementById("aviso-derivacion");
+      aviso.textContent = mensaje;
+      aviso.className = `aviso-derivacion ${tipo}`;
+      if (timerAvisoDerivacion) clearTimeout(timerAvisoDerivacion);
+      timerAvisoDerivacion = setTimeout(() => {
+        aviso.className = "aviso-derivacion";
+        aviso.textContent = "";
+      }, CONFIG.AVISO_DURACION_MS);
+    }
+
+    function registrarFalloSheet() {
+      fallosSheetsSesion++;
+      const badge = document.getElementById("badge-sheet-err");
+      badge.style.display = "inline-block";
+      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
+    }
+
+    numeroUltimoGlobal = cargarCorrelativoLocal();
+    actualizarTextoProximoNumero();
+
+    document.getElementById("btn-login").addEventListener("click", verificarClave);
+    document.getElementById("input-password").addEventListener("keypress", (e) => { if (e.key === 'Enter') verificarClave(); });
+
+    function verificarClave() {
+      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
+        document.getElementById("login-overlay").style.display = "none";
+        document.getElementById("panel-contenido").style.display = "block";
+      } else {
+        document.getElementById("error-password").style.display = "block";
+        document.getElementById("input-password").value = "";
+      }
+    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyAsCV4WoixdH2LmPyUCzIGO_JVcu1JfIVw",
@@ -408,93 +312,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const selectPuesto = document.getElementById("cons");
-    const selectTipo = document.getElementById("tipo-atencion");
-    const inputId = document.getElementById("id");
-    const errorAviso = document.getElementById("error-aviso");
-    const cartelEstado = document.getElementById("cartel-estado");
-    const btnLlamar = document.getElementById("btn-llamar");
-    const btnRepetir = document.getElementById("btn-repetir");
-    const btnDerivar = document.getElementById("btn-derivar");
-
-    let bloqueadoPorRebote = false;
-    let ultimoLlamadoLocal = null;
-    let fallosSheetsSesion = 0;
-    let timerCartel = null;
-
-    const puestoGuardado = localStorage.getItem(CONFIG.STORAGE_KEY_PUESTO);
-    if (puestoGuardado) {
-      selectPuesto.value = puestoGuardado;
-    }
-    selectPuesto.addEventListener("change", () => {
-      localStorage.setItem(CONFIG.STORAGE_KEY_PUESTO, selectPuesto.value);
-    });
-
-    function capitalizarNombre(texto) {
-      return texto
-        .trim()
-        .replace(/\s+/g, " ")
-        .toLowerCase()
-        .replace(/\b\w/g, letra => letra.toUpperCase());
-    }
-
-    function formatearIdentificador(raw) {
-      const limpio = raw.trim().replace(/\s+/g, " ");
-      if (/^\d+$/.test(limpio)) return limpio;
-      return capitalizarNombre(limpio);
-    }
-
-    function formatearHoraCorta(timestamp) {
-      if (!timestamp) return "";
-      return new Date(timestamp).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-    }
-
-    function registrarFalloSheet() {
-      fallosSheetsSesion++;
-      const badge = document.getElementById("badge-sheet-err");
-      badge.style.display = "inline-block";
-      badge.textContent = `⚠ Planilla (${fallosSheetsSesion})`;
-    }
-
-    function mostrarCartelEstado(texto, variante = "ok") {
-      cartelEstado.textContent = texto;
-      cartelEstado.className = `cartel-estado ${variante}`;
-      cartelEstado.style.display = "block";
-      clearTimeout(timerCartel);
-      timerCartel = setTimeout(() => {
-        cartelEstado.style.display = "none";
-      }, CONFIG.DURACION_CARTEL_MS);
-    }
-
-    function guardarEnSheets(datos) {
-      if (!CONFIG.WEBHOOK_URL_GOOGLE_SHEETS || CONFIG.WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
-      fetch(CONFIG.WEBHOOK_URL_GOOGLE_SHEETS, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      }).catch(err => {
-        console.error("Error al enviar a Google Sheets:", err);
-        registrarFalloSheet();
-      });
-    }
-
-    document.getElementById("btn-login").addEventListener("click", verificarClave);
-    document.getElementById("input-password").addEventListener("keypress", (e) => {
-      if (e.key === "Enter") verificarClave();
-    });
-
-    function verificarClave() {
-      if (document.getElementById("input-password").value === CONFIG.CLAVE_SECRETA) {
-        document.getElementById("login-overlay").style.display = "none";
-        document.getElementById("panel-contenido").style.display = "block";
-        inputId.focus();
-      } else {
-        document.getElementById("error-password").style.display = "block";
-        document.getElementById("input-password").value = "";
-      }
-    }
-
     onValue(ref(db, ".info/connected"), (snap) => {
       const badge = document.getElementById("badge-conexion");
       if (snap.val() === true) {
@@ -506,160 +323,219 @@
       }
     });
 
-    onValue(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
+    onValue(ref(db, CONFIG.NODO_COLA_ENTREVISTA), (snapshot) => {
+      colaEntrevistaActual = snapshot.exists() ? snapshot.val() : {};
+    });
+
+    onValue(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), (snapshot) => {
       const elDonante = document.getElementById("ultimo-donante");
       const elInfo = document.getElementById("ultimo-info");
 
       if (snapshot.exists()) {
         const datos = snapshot.val();
-        ultimoLlamadoLocal = datos;
-        const hora = formatearHoraCorta(datos.timestamp);
-        const etiquetaTipo = datos.tipo ? ` [${datos.tipo}]` : "";
-        elDonante.textContent = datos.identificador || "-";
-        elInfo.textContent = datos.identificador
-          ? `${datos.consultorio || "Recepción"}${etiquetaTipo}${hora ? " • " + hora + " hs" : ""}`
-          : "Sin llamados activos";
+        const hora = datos.timestamp 
+          ? new Date(datos.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
+          : '';
+        elDonante.textContent = datos.identificador;
+        elInfo.textContent = `${datos.consultorio}${hora ? ' • ' + hora + ' hs' : ''}`;
+
+        if (!isNaN(datos.identificador)) {
+          const numFirebase = parseInt(datos.identificador, 10);
+          if (numFirebase >= numeroUltimoGlobal) {
+            numeroUltimoGlobal = numFirebase;
+            guardarCorrelativoLocal(numeroUltimoGlobal);
+            actualizarTextoProximoNumero();
+          }
+        }
       } else {
-        ultimoLlamadoLocal = null;
         elDonante.textContent = "-";
         elInfo.textContent = "Sin llamados activos";
       }
     });
 
-    function ejecutarLlamado() {
-      if (bloqueadoPorRebote) return;
-
-      const raw = inputId.value.trim();
-      if (!raw) {
-        errorAviso.style.display = "block";
-        inputId.focus();
-        return;
+    document.getElementById("btn-config-num").addEventListener("click", () => {
+      const nuevoVal = prompt("Ingresá el número desde el cual querés continuar (ej: 0 o 15):", numeroUltimoGlobal);
+      if (nuevoVal !== null && !isNaN(nuevoVal) && nuevoVal.trim() !== "") {
+        numeroUltimoGlobal = parseInt(nuevoVal, 10) - 1;
+        if (numeroUltimoGlobal < 0) numeroUltimoGlobal = 0;
+        guardarCorrelativoLocal(numeroUltimoGlobal);
+        actualizarTextoProximoNumero();
       }
-      errorAviso.style.display = "none";
+    });
+
+    function guardarDonanteEnSheets(datos) {
+      if (!CONFIG.WEBHOOK_URL_GOOGLE_SHEETS || CONFIG.WEBHOOK_URL_GOOGLE_SHEETS.includes("TU_URL")) return;
+      fetch(CONFIG.WEBHOOK_URL_GOOGLE_SHEETS, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      }).catch((err) => {
+        console.error("Error al guardar en Sheets:", err);
+        registrarFalloSheet();
+      });
+    }
+
+    function ejecutarLlamado(identificadorTexto) {
+      if (bloqueadoPorRebote) return;
+      const c = document.getElementById("cons").value;
+      const i = identificadorTexto.trim();
+      if (!i) return;
 
       bloqueadoPorRebote = true;
-      btnLlamar.disabled = true;
-      btnLlamar.textContent = "⏳ Llamando...";
-
+      const btnSig = document.getElementById("btn-siguiente");
+      const btnLla = document.getElementById("btn-llamar");
+      btnSig.disabled = true;
+      btnLla.disabled = true;
       setTimeout(() => {
         bloqueadoPorRebote = false;
-        btnLlamar.disabled = false;
-        btnLlamar.textContent = "📢 LLAMAR A RECEPCIÓN";
+        btnSig.disabled = false;
+        btnLla.disabled = false;
       }, CONFIG.ANTI_REBOTE_MS);
 
-      const identificador = formatearIdentificador(raw);
-      const puesto = selectPuesto.value;
-      const tipo = selectTipo.value;
       const ahora = new Date();
-      const fechaHoraStr = ahora.toLocaleDateString("es-AR") + " " + ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const fechaHoraStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      const datosLlamado = {
-        identificador,
-        sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: puesto,
-        tipo,
-        accion: "llamado",
-        timestamp: Date.now()
-      };
+      const datosLlamado = { identificador: i, sector: CONFIG.SECTOR_ACTUAL, consultorio: c, timestamp: Date.now() };
 
-      ultimoLlamadoLocal = datosLlamado;
-      set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
-        inputId.value = "";
-        selectTipo.value = "Sin Turno";
-        inputId.focus();
+      set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datosLlamado).then(() => {
+        document.getElementById("id").value = "";
       });
 
-      push(ref(db, CONFIG.NODO_HISTORIAL), datosLlamado);
-      guardarEnSheets({
-        fechaHora: fechaHoraStr,
-        identificador,
-        sector: CONFIG.SECTOR_ACTUAL,
-        consultorio: `${puesto} (${tipo})`,
-        observacion: ""
-      });
+      push(ref(db, 'historial'), datosLlamado);
+      guardarDonanteEnSheets({ fechaHora: fechaHoraStr, identificador: i, sector: CONFIG.SECTOR_ACTUAL, consultorio: c, observacion: "" });
+    }
+
+    function llamarSiguiente() {
+      numeroUltimoGlobal++;
+      if (numeroUltimoGlobal > 99) {
+        numeroUltimoGlobal = 0;
+      }
+      guardarCorrelativoLocal(numeroUltimoGlobal);
+      actualizarTextoProximoNumero();
+      ejecutarLlamado(formatearNumero(numeroUltimoGlobal));
     }
 
     function repetirLlamado() {
-      if (ultimoLlamadoLocal && ultimoLlamadoLocal.identificador) {
-        const datosRepetir = { ...ultimoLlamadoLocal, accion: "repetir", timestamp: Date.now() };
-        set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datosRepetir);
-        push(ref(db, CONFIG.NODO_HISTORIAL), datosRepetir);
-        animarFeedbackRepetir();
-        return;
-      }
-
-      get(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`)).then((snapshot) => {
+      get(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`)).then((snapshot) => {
         if (snapshot.exists()) {
           const datos = snapshot.val();
-          datos.accion = "repetir";
           datos.timestamp = Date.now();
-          set(ref(db, `${CONFIG.NODO_SECTORES}/${CONFIG.SECTOR_ACTUAL}`), datos);
-          push(ref(db, CONFIG.NODO_HISTORIAL), datos);
-          animarFeedbackRepetir();
+          set(ref(db, `sectores/${CONFIG.SECTOR_ACTUAL}`), datos);
+          push(ref(db, 'historial'), datos);
         } else {
-          mostrarCartelEstado("No hay turnos activos en Recepción para repetir.", "aviso");
+          alert("No hay turnos activos en Recepción para repetir.");
         }
       });
     }
 
-    function animarFeedbackRepetir() {
-      const box = document.getElementById("box-repetir-tactil");
-      box.style.background = "#dcfce7";
-      setTimeout(() => {
-        box.style.background = "";
-      }, 400);
+    document.getElementById("btn-siguiente").addEventListener("click", llamarSiguiente);
+    
+    function procesarLlamadoLibre() {
+      const i = document.getElementById("id").value;
+      if (!i.trim()) return alert("Por favor escribe el nombre o número del donante.");
+      if (!isNaN(i.trim())) {
+        numeroUltimoGlobal = parseInt(i.trim(), 10);
+        guardarCorrelativoLocal(numeroUltimoGlobal);
+        actualizarTextoProximoNumero();
+      }
+      ejecutarLlamado(i);
     }
 
-    btnDerivar.addEventListener("click", () => {
-      const raw = inputId.value.trim();
-      const base = raw ? formatearIdentificador(raw) : (ultimoLlamadoLocal && ultimoLlamadoLocal.identificador ? ultimoLlamadoLocal.identificador : "");
-
-      if (!base) {
-        errorAviso.style.display = "block";
-        inputId.focus();
-        return;
-      }
-      errorAviso.style.display = "none";
-
-      if (/^\d+$/.test(base)) {
-        mostrarCartelEstado("Escribí el nombre y apellido del donante para pasar a Entrevista.", "aviso");
-        inputId.focus();
-        return;
-      }
-
-      const tipoDerivacion = raw ? selectTipo.value : (ultimoLlamadoLocal?.tipo || "Sin Turno");
-
-      push(ref(db, CONFIG.NODO_COLA_ENTREVISTA), {
-        identificador: base,
-        tipo: tipoDerivacion,
-        origenPuesto: selectPuesto.value,
-        timestamp: Date.now()
-      }).then(() => {
-        if (raw) {
-          inputId.value = "";
-          selectTipo.value = "Sin Turno";
-          inputId.focus();
-        }
-        mostrarCartelEstado(`➡️ ${base} pasó a espera de Entrevista`, "ok");
-      }).catch(err => {
-        console.error("Error al derivar a Entrevista:", err);
-      });
-    });
-
-    btnLlamar.addEventListener("click", ejecutarLlamado);
-    btnRepetir.addEventListener("click", repetirLlamado);
-    document.getElementById("box-repetir-tactil").addEventListener("click", repetirLlamado);
-
-    inputId.addEventListener("keypress", (e) => {
+    document.getElementById("btn-llamar").addEventListener("click", procesarLlamadoLibre);
+    document.getElementById("id").addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
-        ejecutarLlamado();
+        e.preventDefault();
+        procesarLlamadoLibre();
       }
     });
 
-    inputId.addEventListener("input", () => {
-      if (errorAviso.style.display === "block") {
-        errorAviso.style.display = "none";
+    function yaExisteEnColaEntrevista(nombreLimpio) {
+      const claveBuscada = normalizarClaveNombre(nombreLimpio);
+      return Object.values(colaEntrevistaActual).some(
+        item => item && normalizarClaveNombre(item.identificador || "") === claveBuscada
+      );
+    }
+
+function derivarAEntrevista() {
+      const inputDerivar = document.getElementById("derivar-nombre");
+      const rawNombre = inputDerivar.value;
+      if (!rawNombre.trim()) {
+        mostrarAvisoDerivacion("⚠️ Escribí Nombre y Apellido para derivar.", "err");
+        inputDerivar.focus();
+        return;
       }
+
+      const nombreLimpio = capitalizarNombre(rawNombre);
+      const tipoAtencion = document.getElementById("derivar-tipo").value;
+      const yaEstabaEnCola = yaExisteEnColaEntrevista(nombreLimpio);
+
+      const datosDerivacion = {
+        identificador: nombreLimpio,
+        tipo: tipoAtencion,
+        timestamp: Date.now()
+      };
+
+      push(ref(db, CONFIG.NODO_COLA_ENTREVISTA), datosDerivacion).then(() => {
+        inputDerivar.value = "";
+        document.getElementById("derivar-tipo").value = "Sin Turno";
+        inputDerivar.focus();
+        if (yaEstabaEnCola) {
+          mostrarAvisoDerivacion(`ℹ️ "${nombreLimpio}" derivado (ya había otro igual en cola).`, "ok");
+        } else {
+          mostrarAvisoDerivacion(`✅ "${nombreLimpio}" derivado a Entrevista.`, "ok");
+        }
+      }).catch(err => {
+        console.error("Error al derivar:", err);
+        mostrarAvisoDerivacion("❌ Error al derivar. Revisá la conexión.", "err");
+      });
+    }
+    document.getElementById("btn-derivar").addEventListener("click", derivarAEntrevista);
+    document.getElementById("derivar-nombre").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        derivarAEntrevista();
+      }
+    });
+
+    document.getElementById("btn-repetir").addEventListener("click", repetirLlamado);
+
+    document.addEventListener("keydown", (e) => {
+      if (document.getElementById("panel-contenido").style.display === "none") return;
+
+      const inputLibre = document.getElementById("id");
+      const inputDerivacion = document.getElementById("derivar-nombre");
+
+      if ((e.key === "Enter" || e.code === "Space") && document.activeElement !== inputLibre && document.activeElement !== inputDerivacion && document.activeElement.tagName !== "SELECT") {
+        e.preventDefault();
+        llamarSiguiente();
+      }
+
+      if (e.altKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        repetirLlamado();
+      }
+    });
+
+    document.getElementById("btn-limpiar").addEventListener("click", () => {
+      const confirmar1 = confirm("⚠️ PASO 1/2: ¿Limpiar los llamados activos de la Tele y las colas pendientes de Entrevista y Extracción para iniciar la jornada? (El historial guardado NO se borrará)");
+      if (!confirmar1) return;
+
+      const confirmar2 = confirm("⚠️ PASO 2/2 (CONFIRMACIÓN FINAL): ¿Estás seguro de borrar todos los turnos activos en pantalla y las colas de espera actuales?");
+      if (!confirmar2) return;
+
+      Promise.all([
+        remove(ref(db, 'sectores')),
+        remove(ref(db, CONFIG.NODO_COLA_ENTREVISTA)),
+        remove(ref(db, CONFIG.NODO_COLA_EXTRACCION))
+      ]).then(() => {
+        numeroUltimoGlobal = 0;
+        guardarCorrelativoLocal(0);
+        actualizarTextoProximoNumero();
+        alert("✅ Pantalla de la Tele y colas de Entrevista y Extracción limpias y listas.");
+      }).catch((err) => {
+        console.error("Error al limpiar:", err);
+      });
     });
   </script>
 </body>
