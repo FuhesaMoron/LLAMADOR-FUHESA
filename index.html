@@ -48,8 +48,8 @@
       position: absolute;
       top: 14px;
       right: 24px;
-      background: rgba(30, 41, 59, 0.8);
-      color: #94a3b8;
+      background: rgba(30, 41, 59, 0.85);
+      color: #cbd5e1;
       border: 2px solid #334155;
       padding: 8px 16px;
       border-radius: 10px;
@@ -63,6 +63,10 @@
       background: #334155;
       color: white;
       border-color: #38bdf8;
+    }
+    #btn-fullscreen.audio-pendiente {
+      border-color: #f59e0b;
+      color: #fde68a;
     }
 
     header {
@@ -83,7 +87,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-right: 145px;
+      margin-right: 165px;
       flex-shrink: 0;
     }
 
@@ -142,6 +146,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 15px;
       height: 100%;
+      min-height: 0;
     }
 
     .tarjeta-sector {
@@ -153,20 +158,21 @@
       border: 3px solid #334155;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: space-between;
+      min-height: 0;
       transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .tarjeta-sector.activo {
       border-color: #38bdf8;
-      transform: scale(1.02);
+      transform: scale(1.015);
     }
 
     .tarjeta-sector.prioridad-club {
       border-color: #fbbf24;
       background: #1e293b;
       box-shadow: 0 0 25px rgba(251, 191, 36, 0.4);
-      transform: scale(1.02);
+      transform: scale(1.015);
     }
     .tarjeta-sector.prioridad-club .etiqueta-tipo {
       color: #fbbf24;
@@ -178,7 +184,7 @@
       border-color: #f43f5e;
       background: #1e293b;
       box-shadow: 0 0 25px rgba(244, 63, 94, 0.4);
-      transform: scale(1.02);
+      transform: scale(1.015);
     }
     .tarjeta-sector.prioridad-plaquetas .etiqueta-tipo {
       color: #f43f5e;
@@ -191,27 +197,30 @@
       font-weight: 800;
       color: #93c5fd;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: 0.5px;
+      flex-shrink: 0;
     }
 
     .turno-actual {
-      font-size: 3.2rem;
+      font-size: clamp(2.1rem, 3.2vw, 3.2rem);
       font-weight: 900;
       color: #ffffff;
-      margin: 8px 0;
+      margin: auto 0;
+      padding: 8px 4px;
       word-break: normal;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
       line-height: 1.15;
     }
 
     .turno-actual.es-tanda {
-      font-size: 1.95rem;
-      line-height: 1.25;
+      font-size: clamp(1.15rem, 1.8vw, 1.75rem);
+      line-height: 1.24;
+      padding: 6px 2px;
     }
 
     .info-destino {
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 700;
       color: #cbd5e1;
       background: #0f172a;
@@ -219,6 +228,7 @@
       border-radius: 10px;
       margin-top: 8px;
       border: 1px solid #334155;
+      flex-shrink: 0;
     }
 
     .etiqueta-tipo {
@@ -239,6 +249,7 @@
       flex-direction: column;
       height: 100%;
       box-sizing: border-box;
+      min-height: 0;
     }
     .titulo-historial-lateral {
       font-size: 1.2rem;
@@ -250,6 +261,7 @@
       border-bottom: 2px solid #334155;
       padding-bottom: 8px;
       letter-spacing: 0.5px;
+      flex-shrink: 0;
     }
     .lista-recientes {
       flex: 1;
@@ -278,6 +290,7 @@
       font-size: 1.1rem;
       font-weight: 800;
       color: #ffffff;
+      overflow-wrap: anywhere;
       word-break: break-word;
     }
     .item-reciente-destino {
@@ -330,9 +343,9 @@
     }
 
     @keyframes parpadeo {
-      0% { opacity: 1; transform: scale(1.02); }
-      50% { opacity: 0.6; transform: scale(1.04); }
-      100% { opacity: 1; transform: scale(1.02); }
+      0% { opacity: 1; transform: scale(1.015); }
+      50% { opacity: 0.65; transform: scale(1.03); }
+      100% { opacity: 1; transform: scale(1.015); }
     }
     .parpadeando {
       animation: parpadeo 0.6s ease infinite;
@@ -343,7 +356,7 @@
 
   <div id="capa-navidena"></div>
 
-  <button id="btn-fullscreen">📺 Pantalla Completa</button>
+  <button id="btn-fullscreen" class="audio-pendiente">📺 Pantalla Completa</button>
 
   <header>
     <div>
@@ -416,6 +429,20 @@
     const db = getDatabase(app);
 
     let audioCtx = null;
+    let audioHabilitadoPorUsuario = false;
+
+    function habilitarAudioDesdeInteraccion() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      audioHabilitadoPorUsuario = true;
+      btnFullscreen.classList.remove("audio-pendiente");
+    }
+
+    document.addEventListener("pointerdown", habilitarAudioDesdeInteraccion, { once: false });
 
     function iconoClima(codigoWmo) {
       if (codigoWmo === 0) return "☀️";
@@ -499,6 +526,7 @@
 
     const btnFullscreen = document.getElementById("btn-fullscreen");
     btnFullscreen.addEventListener("click", () => {
+      habilitarAudioDesdeInteraccion();
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
           console.error("Error al intentar pasar a pantalla completa:", err);
@@ -580,7 +608,9 @@
     onValue(consultaRecientes, (snapshot) => {
       if (snapshot.exists()) {
         const registros = snapshot.val();
-        const lista = Object.values(registros).sort((a, b) => b.timestamp - a.timestamp);
+        const lista = Object.values(registros)
+          .filter(item => item && item.identificador)
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         
         const ultimosCinco = lista.slice(0, 5);
         let htmlRecientes = "";
@@ -609,7 +639,7 @@
           `;
         });
 
-        contenedorRecientes.innerHTML = htmlRecientes;
+        contenedorRecientes.innerHTML = htmlRecientes || `<div style="text-align: center; color: #64748b; margin-top: 30px; font-weight: 600;">Sin llamados recientes</div>`;
       } else {
         contenedorRecientes.innerHTML = `<div style="text-align: center; color: #64748b; margin-top: 30px; font-weight: 600;">Sin llamados recientes</div>`;
       }
@@ -620,7 +650,7 @@
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
       if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        audioCtx.resume().catch(() => {});
       }
 
       const now = audioCtx.currentTime;
